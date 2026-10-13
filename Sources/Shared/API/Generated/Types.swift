@@ -101,16 +101,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/activity`.
     /// - Remark: Generated from `#/paths//v1/activity/get(activityList)`.
     func activityList(_ input: Operations.activityList.Input) async throws -> Operations.activityList.Output
-    /// Install or update the privileged DNS helper (asks for an admin password)
+    /// Install or repair Bouncer's DNS tunnel configuration (macOS asks you to allow it once)
     ///
-    /// - Remark: HTTP `POST /v1/helper/install`.
-    /// - Remark: Generated from `#/paths//v1/helper/install/post(helperInstall)`.
-    func helperInstall(_ input: Operations.helperInstall.Input) async throws -> Operations.helperInstall.Output
-    /// Turn blocking off and remove the privileged helper
+    /// - Remark: HTTP `POST /v1/tunnel/install`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/install/post(tunnelInstall)`.
+    func tunnelInstall(_ input: Operations.tunnelInstall.Input) async throws -> Operations.tunnelInstall.Output
+    /// Turn blocking off and remove the tunnel configuration
     ///
-    /// - Remark: HTTP `POST /v1/helper/uninstall`.
-    /// - Remark: Generated from `#/paths//v1/helper/uninstall/post(helperUninstall)`.
-    func helperUninstall(_ input: Operations.helperUninstall.Input) async throws -> Operations.helperUninstall.Output
+    /// - Remark: HTTP `POST /v1/tunnel/remove`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)`.
+    func tunnelRemove(_ input: Operations.tunnelRemove.Input) async throws -> Operations.tunnelRemove.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -305,22 +305,22 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Install or update the privileged DNS helper (asks for an admin password)
+    /// Install or repair Bouncer's DNS tunnel configuration (macOS asks you to allow it once)
     ///
-    /// - Remark: HTTP `POST /v1/helper/install`.
-    /// - Remark: Generated from `#/paths//v1/helper/install/post(helperInstall)`.
-    public func helperInstall(headers: Operations.helperInstall.Input.Headers = .init()) async throws -> Operations.helperInstall.Output {
-        try await helperInstall(Operations.helperInstall.Input(headers: headers))
+    /// - Remark: HTTP `POST /v1/tunnel/install`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/install/post(tunnelInstall)`.
+    public func tunnelInstall(headers: Operations.tunnelInstall.Input.Headers = .init()) async throws -> Operations.tunnelInstall.Output {
+        try await tunnelInstall(Operations.tunnelInstall.Input(headers: headers))
     }
-    /// Turn blocking off and remove the privileged helper
+    /// Turn blocking off and remove the tunnel configuration
     ///
-    /// - Remark: HTTP `POST /v1/helper/uninstall`.
-    /// - Remark: Generated from `#/paths//v1/helper/uninstall/post(helperUninstall)`.
-    public func helperUninstall(
-        headers: Operations.helperUninstall.Input.Headers = .init(),
-        body: Operations.helperUninstall.Input.Body
-    ) async throws -> Operations.helperUninstall.Output {
-        try await helperUninstall(Operations.helperUninstall.Input(
+    /// - Remark: HTTP `POST /v1/tunnel/remove`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)`.
+    public func tunnelRemove(
+        headers: Operations.tunnelRemove.Input.Headers = .init(),
+        body: Operations.tunnelRemove.Input.Body
+    ) async throws -> Operations.tunnelRemove.Output {
+        try await tunnelRemove(Operations.tunnelRemove.Input(
             headers: headers,
             body: body
         ))

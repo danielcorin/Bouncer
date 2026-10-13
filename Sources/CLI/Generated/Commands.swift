@@ -118,28 +118,6 @@ enum GeneratedCLI {
             try await CLIEnvironment.current.run(APIOperations.ConfigValidate.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
         }
     }
-    struct HelperInstall: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(commandName: "install", abstract: "Install or update the privileged DNS helper (asks for an admin password)")
-        @Flag(help: "Emit a structured JSON result.") var json = false
-        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
-        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
-        mutating func run() async throws {
-            let values: [String: String] = [:]
-            try await CLIEnvironment.current.run(APIOperations.HelperInstall.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
-        }
-    }
-    struct HelperUninstall: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(commandName: "uninstall", abstract: "Turn blocking off and remove the privileged helper")
-        @Flag(name: .customLong("force"), help: "Confirm this destructive operation.") var value_force = false
-        @Flag(help: "Emit a structured JSON result.") var json = false
-        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
-        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
-        mutating func run() async throws {
-            var values: [String: String] = [:]
-            if value_force { values["force"] = "true" }
-            try await CLIEnvironment.current.run(APIOperations.HelperUninstall.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
-        }
-    }
     struct Quit: AsyncParsableCommand {
         static let configuration = CommandConfiguration(commandName: "quit", abstract: "Quit")
         @Flag(help: "Emit a structured JSON result.") var json = false
@@ -240,6 +218,28 @@ enum GeneratedCLI {
             try await CLIEnvironment.current.run(APIOperations.Status.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
         }
     }
+    struct TunnelInstall: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(commandName: "install", abstract: "Install or repair Bouncer\'s DNS tunnel configuration (macOS asks you to allow it once)")
+        @Flag(help: "Emit a structured JSON result.") var json = false
+        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
+        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
+        mutating func run() async throws {
+            let values: [String: String] = [:]
+            try await CLIEnvironment.current.run(APIOperations.TunnelInstall.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
+        }
+    }
+    struct TunnelRemove: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(commandName: "remove", abstract: "Turn blocking off and remove the tunnel configuration")
+        @Flag(name: .customLong("force"), help: "Confirm this destructive operation.") var value_force = false
+        @Flag(help: "Emit a structured JSON result.") var json = false
+        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
+        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
+        mutating func run() async throws {
+            var values: [String: String] = [:]
+            if value_force { values["force"] = "true" }
+            try await CLIEnvironment.current.run(APIOperations.TunnelRemove.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
+        }
+    }
     struct ConfigGroup: AsyncParsableCommand {
         static var configuration: CommandConfiguration { .init(commandName: "config", subcommands: [
             CLIEnvironment.current.command(APIOperations.ConfigGet.self, default: ConfigGet.self),
@@ -250,18 +250,18 @@ enum GeneratedCLI {
             CLIEnvironment.current.command(APIOperations.ConfigValidate.self, default: ConfigValidate.self)
         ]) }
     }
-    struct HelperGroup: AsyncParsableCommand {
-        static var configuration: CommandConfiguration { .init(commandName: "helper", subcommands: [
-            CLIEnvironment.current.command(APIOperations.HelperInstall.self, default: HelperInstall.self),
-            CLIEnvironment.current.command(APIOperations.HelperUninstall.self, default: HelperUninstall.self)
-        ]) }
-    }
     struct RulesGroup: AsyncParsableCommand {
         static var configuration: CommandConfiguration { .init(commandName: "rules", subcommands: [
             CLIEnvironment.current.command(APIOperations.RuleAdd.self, default: RuleAdd.self),
             CLIEnvironment.current.command(APIOperations.RuleList.self, default: RuleList.self),
             CLIEnvironment.current.command(APIOperations.RuleRemove.self, default: RuleRemove.self),
             CLIEnvironment.current.command(APIOperations.RuleUpdate.self, default: RuleUpdate.self)
+        ]) }
+    }
+    struct TunnelGroup: AsyncParsableCommand {
+        static var configuration: CommandConfiguration { .init(commandName: "tunnel", subcommands: [
+            CLIEnvironment.current.command(APIOperations.TunnelInstall.self, default: TunnelInstall.self),
+            CLIEnvironment.current.command(APIOperations.TunnelRemove.self, default: TunnelRemove.self)
         ]) }
     }
     static var commands: [ParsableCommand.Type] { [
@@ -274,7 +274,7 @@ enum GeneratedCLI {
         CLIEnvironment.current.command(APIOperations.Show.self, default: Show.self),
         CLIEnvironment.current.command(APIOperations.Status.self, default: Status.self),
         ConfigGroup.self,
-        HelperGroup.self,
-        RulesGroup.self
+        RulesGroup.self,
+        TunnelGroup.self
     ] }
 }

@@ -4,7 +4,7 @@ import BouncerCore
 
 /// Add a typed scenario here with each new operation. The coverage gate fails
 /// for missing IDs; every assertion runs through direct Swift and the CLI.
-/// Steps run in order against a fresh fixture whose helper is in-memory.
+/// Steps run in order against a fresh fixture whose tunnel is in-memory.
 @MainActor
 func appScenarios(application: any ApplicationOperations, configuration: ConfigurationOperationService, transfers: TransferStore) throws -> ScenarioSuite {
     let steps: [ScenarioStep] = [
@@ -80,10 +80,10 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
         },
         .init(APIOperations.RuleUpdate.self, error: "not_found", input: { .init(enabled: true, id: "nothing.invalid") }) { _ in },
 
-        // Blocking lifecycle (the fixture's in-memory helper installs on first use)
+        // Blocking lifecycle (the fixture's in-memory tunnel installs on first use)
         .init(APIOperations.BlockingOn.self, input: { .init() }) { value in
             try require(value["enabled"] == .bool(true) && value["phase"] == .string("on"), "Blocking turns on")
-            try require(value["helper"]["installed"] == .bool(true) && value["helper"]["connected"] == .bool(true), "Helper installed on demand")
+            try require(value["tunnel"]["installed"] == .bool(true) && value["tunnel"]["connected"] == .bool(true), "Tunnel installed on demand")
             try require(value["ruleCount"] == .integer(3), "Rule count")
         },
         .init(APIOperations.ActivityList.self, input: { .init(limit: 10) }) { value in
@@ -102,12 +102,15 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
         .init(APIOperations.BlockingOff.self, input: { .init() }) { value in
             try require(value["enabled"] == .bool(false) && value["phase"] == .string("off"), "Blocking turns off")
         },
-        .init(APIOperations.HelperInstall.self, input: { .init() }) { value in
-            try require(value["helper"]["installed"] == .bool(true) && value["helper"]["upToDate"] == .bool(true), "Helper reinstall")
+        .init(APIOperations.BlockingOff.self, input: { .init() }) { value in
+            try require(value["tunnel"]["connected"] == .bool(false), "The tunnel stops with blocking")
         },
-        .init(APIOperations.HelperUninstall.self, error: "force_required", input: { .init(force: false) }) { _ in },
-        .init(APIOperations.HelperUninstall.self, input: { .init(force: true) }) { value in
-            try require(value["helper"]["installed"] == .bool(false) && value["enabled"] == .bool(false), "Helper removed")
+        .init(APIOperations.TunnelInstall.self, input: { .init() }) { value in
+            try require(value["tunnel"]["installed"] == .bool(true) && value["enabled"] == .bool(false), "Reinstalling leaves blocking off")
+        },
+        .init(APIOperations.TunnelRemove.self, error: "force_required", input: { .init(force: false) }) { _ in },
+        .init(APIOperations.TunnelRemove.self, input: { .init(force: true) }) { value in
+            try require(value["tunnel"]["installed"] == .bool(false) && value["enabled"] == .bool(false), "Tunnel configuration removed")
         },
         .init(APIOperations.RuleRemove.self, input: { .init(id: "example.com") }) { value in
             try require(value["pattern"] == .string("example.com"), "Removed rule is returned")

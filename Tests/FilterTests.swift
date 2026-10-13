@@ -61,6 +61,52 @@ final class RuleMatcherTests: XCTestCase {
     }
 }
 
+final class DNSFilterEngineTests: XCTestCase {
+    private func query(_ name: String, type: UInt16 = 1) -> [UInt8] {
+        var packet: [UInt8] = [0x12, 0x34, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0]
+        for label in name.split(separator: ".") { packet += [UInt8(label.utf8.count)] + Array(label.utf8) }
+        return packet + [0, UInt8(type >> 8), UInt8(type & 0xFF), 0, 1]
+    }
+
+    func testBlocksMatchesAndRecordsTheRule() throws {
+        let rule = FilterRule(pattern: "tiktok", kind: .regex)
+        let engine = DNSFilterEngine(matcher: RuleMatcher(rules: [rule]), blockCanaries: true)
+        guard case .respond(let response, let blocked) = engine.process(query("www.TikTok.com")) else { return XCTFail("Expected a local answer") }
+        XCTAssertEqual(DNSPacket.responseCode(response), 3)
+        XCTAssertEqual(blocked?.domain, "www.tiktok.com")
+        XCTAssertEqual(blocked?.ruleID, rule.id)
+    }
+
+    func testForwardsEverythingElseAndAnswersSelfTestsAndCanaries() throws {
+        let engine = DNSFilterEngine(matcher: .empty, blockCanaries: true)
+        guard case .forward(let question) = engine.process(query("apple.com")) else { return XCTFail("Expected forwarding") }
+        XCTAssertEqual(question?.name, "apple.com")
+        guard case .respond(let selfTest, nil) = engine.process(query("abc123." + TunnelConstants.selfTestSuffix)) else { return XCTFail("Self-test") }
+        XCTAssertEqual(Array(selfTest.suffix(4)), TunnelConstants.selfTestAddress)
+        guard case .respond(let canary, nil) = engine.process(query("use-application-dns.net")) else { return XCTFail("Canary") }
+        XCTAssertEqual(DNSPacket.responseCode(canary), 3)
+        let permissive = DNSFilterEngine(matcher: .empty, blockCanaries: false)
+        guard case .forward = permissive.process(query("use-application-dns.net")) else { return XCTFail("Canary blocking is optional") }
+        guard case .forward(nil) = engine.process([1, 2, 3]) else { return XCTFail("Malformed packets are forwarded untouched") }
+    }
+
+    func testUDPDatagramRoundTrip() throws {
+        let original = UDPDatagram(source: [198, 18, 0, 2], destination: TunnelConstants.dnsServerBytes, sourcePort: 50_000, destinationPort: 53, payload: query("a.com"))
+        // Build the client's packet by replying from the opposite side, then parse it.
+        let mirrored = UDPDatagram(source: original.destination, destination: original.source, sourcePort: 53, destinationPort: 50_000, payload: [])
+        let packet = mirrored.reply(payload: original.payload)
+        let parsed = try XCTUnwrap(UDPDatagram(ipv4: packet))
+        XCTAssertEqual(parsed, original)
+        XCTAssertEqual(UDPDatagram.checksum(Array(packet[0..<20])), 0, "Valid IPv4 header checksum")
+        let reply = parsed.reply(payload: [9, 9])
+        XCTAssertEqual(Array(reply[12..<16]), TunnelConstants.dnsServerBytes, "Reply comes from the tunnel resolver")
+        XCTAssertEqual(Array(reply[20..<24]), [0, 53, 0xC3, 0x50], "Ports swapped")
+        var fragment = packet
+        fragment[6] = 0x20 // more fragments
+        XCTAssertNil(UDPDatagram(ipv4: fragment))
+    }
+}
+
 final class DNSPacketTests: XCTestCase {
     /// dig-style query for www.Example.com A with RD set and an EDNS OPT record.
     private let query: [UInt8] = [
@@ -154,18 +200,17 @@ final class HotkeyChordTests: XCTestCase {
         XCTAssertEqual(try store.load().filterOptions, FilterOptions(blockBypassCanaries: true, upstreamServers: ["9.9.9.9", "2620:fe::fe"]))
     }
 
-    func testHelperProtocolRoundTripsAndFrames() throws {
+    func testTunnelProtocolRoundTrips() throws {
         let rule = FilterRule(pattern: "a.com", kind: .domain)
-        let request = HelperRequest(id: 7, command: .activate, rules: [rule], options: .init(blockBypassCanaries: false, upstreamServers: ["1.1.1.1"]))
-        var buffer = LineBuffer()
-        let encoded = try HelperCoding.encode(request)
-        XCTAssertEqual(buffer.append(encoded.prefix(5))?.count, 0, "Partial lines wait for more bytes")
-        let lines = try XCTUnwrap(buffer.append(encoded.dropFirst(5) + encoded))
-        XCTAssertEqual(lines.count, 2)
-        let decoded = try HelperCoding.decode(HelperRequest.self, from: lines[0])
-        XCTAssertEqual(decoded.rules, [rule])
-        XCTAssertEqual(decoded.options?.upstreamServers, ["1.1.1.1"])
+        let configuration = TunnelConfiguration(rules: [rule], options: .init(blockBypassCanaries: false, upstreamServers: ["1.1.1.1"]), upstream: ["192.168.1.1"])
+        let request = try TunnelCoding.decode(TunnelRequest.self, from: TunnelCoding.encode(TunnelRequest(configuration: configuration, eventsAfter: 4)))
+        XCTAssertEqual(request.configuration, configuration)
+        XCTAssertEqual(request.eventsAfter, 4)
+        let lookup = BlockedLookup(domain: "a.com", ruleID: rule.id, rulePattern: "a.com", date: Date(timeIntervalSince1970: 1_700_000_000))
+        let reply = try TunnelCoding.decode(TunnelReply.self, from: TunnelCoding.encode(TunnelReply(events: [.init(sequence: 5, lookup: lookup)], lastSequence: 5, stats: .init())))
+        XCTAssertEqual(reply.events.first?.lookup, lookup)
     }
+
 }
 
 @MainActor
@@ -213,15 +258,16 @@ final class BlockingStoreTests: XCTestCase {
         XCTAssertFalse(backend.isActive)
     }
 
-    func testReconnectsAfterTheHelperRestarts() async throws {
+    func testExternalDisconnectTurnsBlockingOffInsteadOfFighting() async throws {
         let backend = InMemoryFilterBackend()
         let store = makeStore(backend)
         try await store.setEnabled(true)
         backend.simulateDisconnect()
-        XCTAssertEqual(store.phase, .starting)
-        for _ in 0..<40 where store.phase != .on { try await Task.sleep(for: .milliseconds(50)) }
-        XCTAssertEqual(store.phase, .on)
-        XCTAssertTrue(backend.isActive)
+        XCTAssertFalse(store.isEnabled)
+        XCTAssertEqual(store.phase, .failed)
+        XCTAssertEqual(store.message, "The DNS tunnel was disconnected.")
+        try await store.setEnabled(true)
+        XCTAssertEqual(store.phase, .on, "Turning blocking back on recovers")
     }
 
     func testDetectsWhenSystemLookupsBypassTheFilter() async throws {

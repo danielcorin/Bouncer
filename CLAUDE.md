@@ -19,14 +19,16 @@ print results to stdout and errors to stderr, and require `--force` for destruct
 actions. Use the shared TOML store for all non-secret runtime settings; no
 `UserDefaults` or `@AppStorage`. There is no HTTP server.
 
-Bouncer-specific: blocking is done by the root helper (`Sources/Helper`), which runs
-a DNS filter on 127.0.0.1:53 and swaps every network service's DNS. Invariant: blocks
-must never outlive the app — the helper tears down when the controlling connection
-closes, on SIGTERM, and restores any leftover backup at startup. Keep that true for
-any change. `Sources/Filter` is compiled into both Core and the helper; keep it free
-of app dependencies. Never run `bouncer on` or install the helper without the user:
-it shows an admin password prompt and changes system DNS. Test DNS behavior with the
-unprivileged helper mode in README.md, and `InMemoryFilterBackend` in tests.
+Bouncer-specific: blocking is done by a Network Extension packet tunnel
+(`Sources/Tunnel`) that claims only the virtual resolver 198.18.0.1 and becomes the
+system DNS server; this takes priority over iCloud Private Relay. Invariant: blocks
+must never outlive the app — quitting stops the tunnel, and the tunnel stops itself
+when the app's heartbeat (every 0.5 s) lapses for `TunnelConstants.heartbeatTimeout`.
+Keep that true for any change. `Sources/Filter` is compiled into both Core and the
+tunnel; keep it Foundation-only. The tunnel needs development signing with a
+provisioning profile: install with `scripts/try-dev.sh`, not ad-hoc try-it builds.
+Use `InMemoryFilterBackend` in tests; the first `bouncer on` on a machine shows a
+macOS VPN-approval prompt, so don't run it without the user.
 
 Run `scripts/verify.sh` before handoff; CI executes the same deterministic gate.
 UI persistence writes must use generated operations via Swift services. Add a
@@ -36,7 +38,7 @@ for public read surfaces; keep underlying mutation methods internal to Core and
 extend compiler probes for new stores. Test native action delegation and read-model
 refresh after CLI/API mutations. Presentation state can stay local to views.
 
-Verify the bundled helper, graceful shutdown, and no coverage instrumentation before
+Verify the bundled CLI and tunnel extension, graceful shutdown, and no coverage instrumentation before
 installation or release. CloudKit checks require real provisioning and the same
 long-lived container on both platforms. Report unavailable CI enforcement or device
 verification explicitly; the gate uses compiler results and assertions, with no

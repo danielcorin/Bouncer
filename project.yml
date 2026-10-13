@@ -84,9 +84,10 @@ targets:
         product: AutomationRuntime
       - target: BouncerCLI
         embed: false
-      - target: BouncerHelper
-        embed: false
+      - target: BouncerTunnel
+        embed: true
       - sdk: Carbon.framework
+      - sdk: NetworkExtension.framework
     settings:
       base:
         PRODUCT_NAME: Bouncer
@@ -99,13 +100,10 @@ targets:
         script: |
           mkdir -p "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers"
           ditto "${BUILT_PRODUCTS_DIR}/bouncer" "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers/bouncer"
-          ditto "${BUILT_PRODUCTS_DIR}/BouncerHelper" "${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers/BouncerHelper"
         inputFiles:
           - "$(BUILT_PRODUCTS_DIR)/bouncer"
-          - "$(BUILT_PRODUCTS_DIR)/BouncerHelper"
         outputFiles:
           - "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/bouncer"
-          - "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/BouncerHelper"
     entitlements:
       path: App.entitlements
       properties:
@@ -113,6 +111,8 @@ targets:
         # in ~/Library/Application Support. Use App Group/XPC IPC before enabling
         # App Sandbox for a future Mac App Store build.
         com.apple.security.app-sandbox: false
+        # Bouncer blocks through its own DNS-only packet tunnel (Sources/Tunnel).
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
 
   BouncerCLI:
     type: tool
@@ -133,19 +133,36 @@ targets:
         # product beside the app would create a generic, non-exportable archive.
         SKIP_INSTALL: "YES"
 
-  # Root LaunchDaemon (installed on demand by the app) that runs the loopback DNS
-  # filter and swaps system DNS. Compiled only from Sources/Helper + Sources/Filter.
-  BouncerHelper:
-    type: tool
+  # Network Extension packet tunnel that claims only DNS: it becomes the system
+  # resolver while blocking is on. Compiled from Sources/Tunnel + Sources/Filter.
+  BouncerTunnel:
+    type: app-extension
     platform: macOS
     sources:
-      - Sources/Helper
+      - Sources/Tunnel
       - Sources/Filter
+    dependencies:
+      - sdk: NetworkExtension.framework
+    info:
+      path: Sources/Tunnel/Info.plist
+      properties:
+        CFBundleDisplayName: Bouncer DNS Tunnel
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider
     settings:
       base:
-        PRODUCT_NAME: BouncerHelper
-        PRODUCT_BUNDLE_IDENTIFIER: llc.wvlen.Bouncer.helper
-        SKIP_INSTALL: "YES"
+        PRODUCT_NAME: BouncerTunnel
+        PRODUCT_BUNDLE_IDENTIFIER: llc.wvlen.Bouncer.Tunnel
+        GENERATE_INFOPLIST_FILE: "NO"
+    entitlements:
+      path: Sources/Tunnel/Tunnel.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.developer.networking.networkextension: [packet-tunnel-provider]
 
   BouncerAutomationFixture:
     type: tool
@@ -183,7 +200,7 @@ schemes:
       targets:
         Bouncer: all
         BouncerCLI: all
-        BouncerHelper: all
+        BouncerTunnel: all
         BouncerCore: all
         BouncerTests: [test]
     run:

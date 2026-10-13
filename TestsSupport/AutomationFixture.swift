@@ -3,7 +3,7 @@ import AutomationRuntime
 import BouncerCore
 
 /// An isolated backend for CLI/HTTP integration. This tool is never bundled or installed.
-/// It runs the real `BouncerService` and `BlockingStore` over an in-memory helper.
+/// It runs the real `BouncerService` and `BlockingStore` over an in-memory tunnel.
 @main
 struct AutomationFixture {
     @MainActor static func main() async throws {

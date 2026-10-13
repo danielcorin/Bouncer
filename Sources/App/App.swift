@@ -51,7 +51,7 @@ final class AppRuntime {
 
     private init() {
         let initial = configurationModel.configuration
-        store = BlockingStore(backend: HelperFilterBackend(), options: initial.filterOptions)
+        store = BlockingStore(backend: TunnelFilterBackend(), options: initial.filterOptions)
         service = BouncerService(store: store, shell: shell, configuration: initial)
     }
 
@@ -82,8 +82,10 @@ final class AppRuntime {
             NSLog("Automation startup failed: \(error.localizedDescription)")
         }
 
-        if configurationModel.configuration.enableOnLaunch {
-            Task { _ = try? await service.blockingOn(.init()) }
+        let enableOnLaunch = configurationModel.configuration.enableOnLaunch
+        Task {
+            await service.start()
+            if enableOnLaunch { _ = try? await service.blockingOn(.init()) }
         }
     }
 
@@ -151,8 +153,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Blocks never outlive the app: tell the helper to restore DNS now. If this
-        // process dies without getting here, the helper does it on disconnect.
+        // Blocks never outlive the app: stop the tunnel now. If this process dies
+        // without getting here, the tunnel stops itself when heartbeats cease.
         MainActor.assumeIsolated { AppRuntime.shared.stop() }
     }
 

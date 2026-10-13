@@ -745,57 +745,6 @@ extension Components {
                 ])
             }
         }
-        /// The privileged DNS helper that applies blocks system-wide.
-        ///
-        /// - Remark: Generated from `#/components/schemas/HelperStatus`.
-        public struct HelperStatus: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/HelperStatus/installed`.
-            public var installed: Swift.Bool
-            /// - Remark: Generated from `#/components/schemas/HelperStatus/upToDate`.
-            public var upToDate: Swift.Bool
-            /// - Remark: Generated from `#/components/schemas/HelperStatus/connected`.
-            public var connected: Swift.Bool
-            /// Creates a new `HelperStatus`.
-            ///
-            /// - Parameters:
-            ///   - installed:
-            ///   - upToDate:
-            ///   - connected:
-            public init(
-                installed: Swift.Bool,
-                upToDate: Swift.Bool,
-                connected: Swift.Bool
-            ) {
-                self.installed = installed
-                self.upToDate = upToDate
-                self.connected = connected
-            }
-            public enum CodingKeys: String, CodingKey {
-                case installed
-                case upToDate
-                case connected
-            }
-            public init(from decoder: any Swift.Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                self.installed = try container.decode(
-                    Swift.Bool.self,
-                    forKey: .installed
-                )
-                self.upToDate = try container.decode(
-                    Swift.Bool.self,
-                    forKey: .upToDate
-                )
-                self.connected = try container.decode(
-                    Swift.Bool.self,
-                    forKey: .connected
-                )
-                try decoder.ensureNoAdditionalProperties(knownKeys: [
-                    "installed",
-                    "upToDate",
-                    "connected"
-                ])
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/BlockingState`.
         public struct BlockingState: Codable, Hashable, Sendable {
             /// Whether blocking is requested.
@@ -814,8 +763,6 @@ extension Components {
             public var phase: Components.Schemas.BlockingState.phasePayload
             /// - Remark: Generated from `#/components/schemas/BlockingState/message`.
             public var message: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/BlockingState/helper`.
-            public var helper: Components.Schemas.HelperStatus
             /// - Remark: Generated from `#/components/schemas/BlockingState/ruleCount`.
             public var ruleCount: Swift.Int
             /// Blocked lookups since launch.
@@ -824,49 +771,51 @@ extension Components {
             public var blockedCount: Swift.Int
             /// - Remark: Generated from `#/components/schemas/BlockingState/hotkey`.
             public var hotkey: Swift.String
-            /// While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown.
+            /// While on: whether a test lookup through the system resolver reached Bouncer's filter. False means something bypasses the blocks. Absent while unknown.
             ///
             /// - Remark: Generated from `#/components/schemas/BlockingState/dnsVerified`.
             public var dnsVerified: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/BlockingState/tunnel`.
+            public var tunnel: Components.Schemas.TunnelStatus
             /// Creates a new `BlockingState`.
             ///
             /// - Parameters:
             ///   - enabled: Whether blocking is requested.
             ///   - phase:
             ///   - message:
-            ///   - helper:
             ///   - ruleCount:
             ///   - blockedCount: Blocked lookups since launch.
             ///   - hotkey:
-            ///   - dnsVerified: While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown.
+            ///   - dnsVerified: While on: whether a test lookup through the system resolver reached Bouncer's filter. False means something bypasses the blocks. Absent while unknown.
+            ///   - tunnel:
             public init(
                 enabled: Swift.Bool,
                 phase: Components.Schemas.BlockingState.phasePayload,
                 message: Swift.String? = nil,
-                helper: Components.Schemas.HelperStatus,
                 ruleCount: Swift.Int,
                 blockedCount: Swift.Int,
                 hotkey: Swift.String,
-                dnsVerified: Swift.Bool? = nil
+                dnsVerified: Swift.Bool? = nil,
+                tunnel: Components.Schemas.TunnelStatus
             ) {
                 self.enabled = enabled
                 self.phase = phase
                 self.message = message
-                self.helper = helper
                 self.ruleCount = ruleCount
                 self.blockedCount = blockedCount
                 self.hotkey = hotkey
                 self.dnsVerified = dnsVerified
+                self.tunnel = tunnel
             }
             public enum CodingKeys: String, CodingKey {
                 case enabled
                 case phase
                 case message
-                case helper
                 case ruleCount
                 case blockedCount
                 case hotkey
                 case dnsVerified
+                case tunnel
             }
             public init(from decoder: any Swift.Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -881,10 +830,6 @@ extension Components {
                 self.message = try container.decodeIfPresent(
                     Swift.String.self,
                     forKey: .message
-                )
-                self.helper = try container.decode(
-                    Components.Schemas.HelperStatus.self,
-                    forKey: .helper
                 )
                 self.ruleCount = try container.decode(
                     Swift.Int.self,
@@ -902,15 +847,19 @@ extension Components {
                     Swift.Bool.self,
                     forKey: .dnsVerified
                 )
+                self.tunnel = try container.decode(
+                    Components.Schemas.TunnelStatus.self,
+                    forKey: .tunnel
+                )
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "enabled",
                     "phase",
                     "message",
-                    "helper",
                     "ruleCount",
                     "blockedCount",
                     "hotkey",
-                    "dnsVerified"
+                    "dnsVerified",
+                    "tunnel"
                 ])
             }
         }
@@ -1294,33 +1243,6 @@ extension Components {
                 ])
             }
         }
-        /// - Remark: Generated from `#/components/schemas/HelperUninstallBody`.
-        public struct HelperUninstallBody: Codable, Hashable, Sendable {
-            /// Confirm removing the privileged helper.
-            ///
-            /// - Remark: Generated from `#/components/schemas/HelperUninstallBody/force`.
-            public var force: Swift.Bool
-            /// Creates a new `HelperUninstallBody`.
-            ///
-            /// - Parameters:
-            ///   - force: Confirm removing the privileged helper.
-            public init(force: Swift.Bool) {
-                self.force = force
-            }
-            public enum CodingKeys: String, CodingKey {
-                case force
-            }
-            public init(from decoder: any Swift.Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                self.force = try container.decode(
-                    Swift.Bool.self,
-                    forKey: .force
-                )
-                try decoder.ensureNoAdditionalProperties(knownKeys: [
-                    "force"
-                ])
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/BlockingStateResult`.
         public struct BlockingStateResult: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/BlockingStateResult/requestId`.
@@ -1508,6 +1430,77 @@ extension Components {
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "requestId",
                     "data"
+                ])
+            }
+        }
+        /// Bouncer's DNS tunnel (a Network Extension VPN configuration that only handles DNS).
+        ///
+        /// - Remark: Generated from `#/components/schemas/TunnelStatus`.
+        public struct TunnelStatus: Codable, Hashable, Sendable {
+            /// The VPN configuration is saved in System Settings.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TunnelStatus/installed`.
+            public var installed: Swift.Bool
+            /// The tunnel is running.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TunnelStatus/connected`.
+            public var connected: Swift.Bool
+            /// Creates a new `TunnelStatus`.
+            ///
+            /// - Parameters:
+            ///   - installed: The VPN configuration is saved in System Settings.
+            ///   - connected: The tunnel is running.
+            public init(
+                installed: Swift.Bool,
+                connected: Swift.Bool
+            ) {
+                self.installed = installed
+                self.connected = connected
+            }
+            public enum CodingKeys: String, CodingKey {
+                case installed
+                case connected
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.installed = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .installed
+                )
+                self.connected = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .connected
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "installed",
+                    "connected"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TunnelRemoveBody`.
+        public struct TunnelRemoveBody: Codable, Hashable, Sendable {
+            /// Confirm removing the VPN configuration.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TunnelRemoveBody/force`.
+            public var force: Swift.Bool
+            /// Creates a new `TunnelRemoveBody`.
+            ///
+            /// - Parameters:
+            ///   - force: Confirm removing the VPN configuration.
+            public init(force: Swift.Bool) {
+                self.force = force
+            }
+            public enum CodingKeys: String, CodingKey {
+                case force
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.force = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .force
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "force"
                 ])
             }
         }

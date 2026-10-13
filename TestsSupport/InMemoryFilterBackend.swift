@@ -1,12 +1,12 @@
 import Foundation
 import BouncerCore
 
-/// A deterministic stand-in for the root helper, for tests and the automation
-/// fixture. It applies the real `RuleMatcher`, so simulated lookups are blocked
-/// exactly as the helper would block them.
+/// A deterministic stand-in for the DNS tunnel, for tests and the automation
+/// fixture. It applies the real `DNSFilterEngine` rules, so simulated lookups are
+/// blocked exactly as the tunnel would block them.
 @MainActor
 final class InMemoryFilterBackend: FilterBackend {
-    var installation = HelperInstallation(installed: false, upToDate: false)
+    var installation = TunnelInstallation(installed: false)
     private(set) var isConnected = false
     var onBlocked: ((BlockedLookup) -> Void)?
     var onDisconnect: ((String) -> Void)?
@@ -29,17 +29,17 @@ final class InMemoryFilterBackend: FilterBackend {
     func install() async throws {
         if let installFailure { throw installFailure }
         installCount += 1
-        installation = .init(installed: true, upToDate: true)
+        installation = .init(installed: true)
     }
 
     func uninstall() async throws {
-        installation = .init(installed: false, upToDate: false)
+        installation = .init(installed: false)
         isConnected = false
         activeRules = nil
     }
 
     func activate(rules: [FilterRule], options: FilterOptions) async throws {
-        guard installation.installed else { throw FilterBackendError("helper_unavailable", "The helper isn't installed.") }
+        guard installation.installed else { throw FilterBackendError("tunnel_unavailable", "The tunnel isn't installed.") }
         if let activateFailure { throw activateFailure }
         isConnected = true
         activeRules = rules
@@ -48,12 +48,17 @@ final class InMemoryFilterBackend: FilterBackend {
     }
 
     func update(rules: [FilterRule], options: FilterOptions) async throws {
-        guard isActive else { throw FilterBackendError("helper_failed", "Not active.") }
+        guard isActive else { throw FilterBackendError("tunnel_failed", "Not active.") }
         activeRules = rules
         activeOptions = options
     }
 
-    func deactivate() async throws { activeRules = nil }
+    func refresh() async {}
+
+    func deactivate() async throws {
+        activeRules = nil
+        isConnected = false
+    }
 
     func deactivateBeforeExit(timeout: TimeInterval) {
         exitTeardowns += 1
@@ -68,10 +73,10 @@ final class InMemoryFilterBackend: FilterBackend {
         onBlocked?(BlockedLookup(domain: domain, ruleID: rule.id, rulePattern: rule.pattern))
     }
 
-    /// The helper dropped the connection (and with it, every block).
+    /// The tunnel was stopped from outside (and with it, every block).
     func simulateDisconnect() {
         isConnected = false
         activeRules = nil
-        onDisconnect?("Lost the connection to the helper.")
+        onDisconnect?("The DNS tunnel was disconnected.")
     }
 }

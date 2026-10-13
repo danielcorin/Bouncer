@@ -8,7 +8,7 @@ enum BouncerCLIStyles {
             "\(status.appName) \(status.version) (pid \(status.processIdentifier))\n" + blocking(status.blocking)
         }
         for operation in [APIOperations.BlockingOn.self, APIOperations.BlockingOff.self, APIOperations.BlockingToggle.self,
-                          APIOperations.HelperInstall.self, APIOperations.HelperUninstall.self] as [any BlockingStateOperation.Type] {
+                          APIOperations.TunnelInstall.self, APIOperations.TunnelRemove.self] as [any BlockingStateOperation.Type] {
             operation.register(in: environment)
         }
         environment.render(APIOperations.RuleList.self) { list in
@@ -37,7 +37,7 @@ enum BouncerCLIStyles {
         var lines = ["Blocking: \(state.phase.rawValue)\(state.enabled && state.phase != .on ? " (requested on)" : "")\(verified)",
                      "Rules: \(state.ruleCount) · blocked lookups since launch: \(state.blockedCount)",
                      "Hotkey: \(HotkeyChord(state.hotkey)?.displayString ?? "none")",
-                     "Helper: \(state.helper.installed ? (state.helper.upToDate ? "installed" : "installed, update pending") : "not installed")\(state.helper.connected ? ", connected" : "")"]
+                     "Tunnel: \(state.tunnel.installed ? "installed" : "not installed (installs on first `bouncer on`)")\(state.tunnel.connected ? ", connected" : "")"]
         if let message = state.message { lines.append(message) }
         return lines.joined(separator: "\n")
     }
@@ -58,5 +58,5 @@ extension BlockingStateOperation {
 extension APIOperations.BlockingOn: BlockingStateOperation {}
 extension APIOperations.BlockingOff: BlockingStateOperation {}
 extension APIOperations.BlockingToggle: BlockingStateOperation {}
-extension APIOperations.HelperInstall: BlockingStateOperation {}
-extension APIOperations.HelperUninstall: BlockingStateOperation {}
+extension APIOperations.TunnelInstall: BlockingStateOperation {}
+extension APIOperations.TunnelRemove: BlockingStateOperation {}

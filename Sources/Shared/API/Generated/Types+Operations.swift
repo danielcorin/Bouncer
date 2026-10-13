@@ -3021,38 +3021,38 @@ public enum Operations {
             }
         }
     }
-    /// Install or update the privileged DNS helper (asks for an admin password)
+    /// Install or repair Bouncer's DNS tunnel configuration (macOS asks you to allow it once)
     ///
-    /// - Remark: HTTP `POST /v1/helper/install`.
-    /// - Remark: Generated from `#/paths//v1/helper/install/post(helperInstall)`.
-    public enum helperInstall {
-        public static let id: Swift.String = "helperInstall"
+    /// - Remark: HTTP `POST /v1/tunnel/install`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/install/post(tunnelInstall)`.
+    public enum tunnelInstall {
+        public static let id: Swift.String = "tunnelInstall"
         public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/v1/helper/install/POST/header`.
+            /// - Remark: Generated from `#/paths/v1/tunnel/install/POST/header`.
             public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.helperInstall.AcceptableContentType>]
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.tunnelInstall.AcceptableContentType>]
                 /// Creates a new `Headers`.
                 ///
                 /// - Parameters:
                 ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.helperInstall.AcceptableContentType>] = .defaultValues()) {
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.tunnelInstall.AcceptableContentType>] = .defaultValues()) {
                     self.accept = accept
                 }
             }
-            public var headers: Operations.helperInstall.Input.Headers
+            public var headers: Operations.tunnelInstall.Input.Headers
             /// Creates a new `Input`.
             ///
             /// - Parameters:
             ///   - headers:
-            public init(headers: Operations.helperInstall.Input.Headers = .init()) {
+            public init(headers: Operations.tunnelInstall.Input.Headers = .init()) {
                 self.headers = headers
             }
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/v1/helper/install/POST/responses/200/content`.
+                /// - Remark: Generated from `#/paths/v1/tunnel/install/POST/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/v1/helper/install/POST/responses/200/content/application\/json`.
+                    /// - Remark: Generated from `#/paths/v1/tunnel/install/POST/responses/200/content/application\/json`.
                     case json(Components.Schemas.BlockingStateResult)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
@@ -3068,26 +3068,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.helperInstall.Output.Ok.Body
+                public var body: Operations.tunnelInstall.Output.Ok.Body
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.helperInstall.Output.Ok.Body) {
+                public init(body: Operations.tunnelInstall.Output.Ok.Body) {
                     self.body = body
                 }
             }
             /// Operation completed
             ///
-            /// - Remark: Generated from `#/paths//v1/helper/install/post(helperInstall)/responses/200`.
+            /// - Remark: Generated from `#/paths//v1/tunnel/install/post(tunnelInstall)/responses/200`.
             ///
             /// HTTP response code: `200 ok`.
-            case ok(Operations.helperInstall.Output.Ok)
+            case ok(Operations.tunnelInstall.Output.Ok)
             /// The associated value of the enum case if `self` is `.ok`.
             ///
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
-            public var ok: Operations.helperInstall.Output.Ok {
+            public var ok: Operations.tunnelInstall.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):
@@ -3101,9 +3101,9 @@ public enum Operations {
                 }
             }
             public struct Default: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/v1/helper/install/POST/responses/default/content`.
+                /// - Remark: Generated from `#/paths/v1/tunnel/install/POST/responses/default/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/v1/helper/install/POST/responses/default/content/application\/json`.
+                    /// - Remark: Generated from `#/paths/v1/tunnel/install/POST/responses/default/content/application\/json`.
                     case json(Components.Schemas.ErrorResult)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
@@ -3119,26 +3119,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.helperInstall.Output.Default.Body
+                public var body: Operations.tunnelInstall.Output.Default.Body
                 /// Creates a new `Default`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.helperInstall.Output.Default.Body) {
+                public init(body: Operations.tunnelInstall.Output.Default.Body) {
                     self.body = body
                 }
             }
             /// Operation failed
             ///
-            /// - Remark: Generated from `#/paths//v1/helper/install/post(helperInstall)/responses/default`.
+            /// - Remark: Generated from `#/paths//v1/tunnel/install/post(tunnelInstall)/responses/default`.
             ///
             /// HTTP response code: `default`.
-            case `default`(statusCode: Swift.Int, Operations.helperInstall.Output.Default)
+            case `default`(statusCode: Swift.Int, Operations.tunnelInstall.Output.Default)
             /// The associated value of the enum case if `self` is `.`default``.
             ///
             /// - Throws: An error if `self` is not `.`default``.
             /// - SeeAlso: `.`default``.
-            public var `default`: Operations.helperInstall.Output.Default {
+            public var `default`: Operations.tunnelInstall.Output.Default {
                 get throws {
                     switch self {
                     case let .`default`(_, response):
@@ -3178,39 +3178,39 @@ public enum Operations {
             }
         }
     }
-    /// Turn blocking off and remove the privileged helper
+    /// Turn blocking off and remove the tunnel configuration
     ///
-    /// - Remark: HTTP `POST /v1/helper/uninstall`.
-    /// - Remark: Generated from `#/paths//v1/helper/uninstall/post(helperUninstall)`.
-    public enum helperUninstall {
-        public static let id: Swift.String = "helperUninstall"
+    /// - Remark: HTTP `POST /v1/tunnel/remove`.
+    /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)`.
+    public enum tunnelRemove {
+        public static let id: Swift.String = "tunnelRemove"
         public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/header`.
+            /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/header`.
             public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.helperUninstall.AcceptableContentType>]
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.tunnelRemove.AcceptableContentType>]
                 /// Creates a new `Headers`.
                 ///
                 /// - Parameters:
                 ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.helperUninstall.AcceptableContentType>] = .defaultValues()) {
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.tunnelRemove.AcceptableContentType>] = .defaultValues()) {
                     self.accept = accept
                 }
             }
-            public var headers: Operations.helperUninstall.Input.Headers
-            /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/requestBody`.
+            public var headers: Operations.tunnelRemove.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/requestBody`.
             @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.HelperUninstallBody)
+                /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.TunnelRemoveBody)
             }
-            public var body: Operations.helperUninstall.Input.Body
+            public var body: Operations.tunnelRemove.Input.Body
             /// Creates a new `Input`.
             ///
             /// - Parameters:
             ///   - headers:
             ///   - body:
             public init(
-                headers: Operations.helperUninstall.Input.Headers = .init(),
-                body: Operations.helperUninstall.Input.Body
+                headers: Operations.tunnelRemove.Input.Headers = .init(),
+                body: Operations.tunnelRemove.Input.Body
             ) {
                 self.headers = headers
                 self.body = body
@@ -3218,9 +3218,9 @@ public enum Operations {
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/responses/200/content`.
+                /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/responses/200/content/application\/json`.
+                    /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/responses/200/content/application\/json`.
                     case json(Components.Schemas.BlockingStateResult)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
@@ -3236,26 +3236,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.helperUninstall.Output.Ok.Body
+                public var body: Operations.tunnelRemove.Output.Ok.Body
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.helperUninstall.Output.Ok.Body) {
+                public init(body: Operations.tunnelRemove.Output.Ok.Body) {
                     self.body = body
                 }
             }
             /// Operation completed
             ///
-            /// - Remark: Generated from `#/paths//v1/helper/uninstall/post(helperUninstall)/responses/200`.
+            /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)/responses/200`.
             ///
             /// HTTP response code: `200 ok`.
-            case ok(Operations.helperUninstall.Output.Ok)
+            case ok(Operations.tunnelRemove.Output.Ok)
             /// The associated value of the enum case if `self` is `.ok`.
             ///
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
-            public var ok: Operations.helperUninstall.Output.Ok {
+            public var ok: Operations.tunnelRemove.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):
@@ -3269,9 +3269,9 @@ public enum Operations {
                 }
             }
             public struct Default: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/responses/default/content`.
+                /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/responses/default/content`.
                 @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/v1/helper/uninstall/POST/responses/default/content/application\/json`.
+                    /// - Remark: Generated from `#/paths/v1/tunnel/remove/POST/responses/default/content/application\/json`.
                     case json(Components.Schemas.ErrorResult)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
@@ -3287,26 +3287,26 @@ public enum Operations {
                     }
                 }
                 /// Received HTTP response body
-                public var body: Operations.helperUninstall.Output.Default.Body
+                public var body: Operations.tunnelRemove.Output.Default.Body
                 /// Creates a new `Default`.
                 ///
                 /// - Parameters:
                 ///   - body: Received HTTP response body
-                public init(body: Operations.helperUninstall.Output.Default.Body) {
+                public init(body: Operations.tunnelRemove.Output.Default.Body) {
                     self.body = body
                 }
             }
             /// Operation failed
             ///
-            /// - Remark: Generated from `#/paths//v1/helper/uninstall/post(helperUninstall)/responses/default`.
+            /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)/responses/default`.
             ///
             /// HTTP response code: `default`.
-            case `default`(statusCode: Swift.Int, Operations.helperUninstall.Output.Default)
+            case `default`(statusCode: Swift.Int, Operations.tunnelRemove.Output.Default)
             /// The associated value of the enum case if `self` is `.`default``.
             ///
             /// - Throws: An error if `self` is not `.`default``.
             /// - SeeAlso: `.`default``.
-            public var `default`: Operations.helperUninstall.Output.Default {
+            public var `default`: Operations.tunnelRemove.Output.Default {
                 get throws {
                     switch self {
                     case let .`default`(_, response):

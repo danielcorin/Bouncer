@@ -20,9 +20,9 @@ public protocol BlockingStoreReadAccess: ObservableObject {
     var isEnabled: Bool { get }
     var phase: BlockingPhase { get }
     var message: String? { get }
-    var helper: HelperInstallation { get }
-    var helperConnected: Bool { get }
-    /// nil until checked; false means lookups bypass the filter (e.g. iCloud Private Relay).
+    var tunnel: TunnelInstallation { get }
+    var tunnelConnected: Bool { get }
+    /// nil until checked; false means lookups bypass the filter.
     var dnsVerified: Bool? { get }
     var activity: [ActivityEntry] { get }
     var blockedCount: Int { get }
@@ -30,8 +30,8 @@ public protocol BlockingStoreReadAccess: ObservableObject {
     static var defaultRulesURL: URL { get }
     static var bypassWarning: String { get }
     func evaluate(_ domain: String) -> FilterDecision
-    /// Re-reads helper installation and connection state.
-    func refreshHelper()
+    /// Re-reads tunnel installation and connection state.
+    func refreshTunnel()
 }
 
 /// Owns rules (persisted as JSON) and the blocking lifecycle. `isEnabled` is what
@@ -42,8 +42,8 @@ public final class BlockingStore: BlockingStoreReadAccess {
     @Published public private(set) var isEnabled = false
     @Published public private(set) var phase: BlockingPhase = .off
     @Published public private(set) var message: String?
-    @Published public private(set) var helper: HelperInstallation
-    @Published public private(set) var helperConnected = false
+    @Published public private(set) var tunnel: TunnelInstallation
+    @Published public private(set) var tunnelConnected = false
     @Published public private(set) var dnsVerified: Bool?
     @Published public private(set) var activity: [ActivityEntry] = []
     @Published public private(set) var blockedCount = 0
@@ -55,12 +55,11 @@ public final class BlockingStore: BlockingStoreReadAccess {
     private let rulesURL: URL
     private var matcher = RuleMatcher.empty
     private(set) var options: FilterOptions
-    private var reconnectTask: Task<Void, Never>?
     private var transition: Task<Void, Error>?
     private var verification: Task<Void, Never>?
     /// Delays before each self-test attempt; DNS configuration changes apply asynchronously.
     var verificationDelays: [Duration] = [.milliseconds(800), .seconds(1), .seconds(2)]
-    nonisolated public static let bypassWarning = "Blocks are being bypassed: macOS isn't sending DNS lookups to Bouncer. This is usually iCloud Private Relay — turn it off for this network in System Settings › Wi-Fi › Details… › iCloud Private Relay, then turn blocking off and on."
+    nonisolated public static let bypassWarning = "Blocks may be bypassed: a test lookup didn't reach Bouncer's DNS tunnel. Another VPN or a DNS profile may be taking priority; turn blocking off and on to retry."
 
     nonisolated public static var defaultRulesURL: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Bouncer/rules.json")
@@ -70,7 +69,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
         self.rulesURL = rulesURL
         self.backend = backend
         self.options = options
-        helper = backend.installation
+        tunnel = backend.installation
         if let data = try? Data(contentsOf: rulesURL), let saved = try? JSONDecoder().decode([FilterRule].self, from: data) {
             rules = saved
         }
@@ -94,16 +93,20 @@ public final class BlockingStore: BlockingStoreReadAccess {
         try await task.value
     }
 
+    /// Loads the saved tunnel configuration state.
+    func prepare() async {
+        await backend.refresh()
+        refreshTunnel()
+    }
+
     private func performSetEnabled(_ enabled: Bool) async throws {
-        reconnectTask?.cancel()
-        reconnectTask = nil
         if enabled {
             guard phase != .on || !backend.isConnected else { isEnabled = true; return }
             isEnabled = true
             phase = .starting
             message = nil
             do {
-                try await ensureHelper()
+                try await ensureTunnel()
                 try await backend.activate(rules: rules, options: options)
                 phase = .on
                 verifyResolution()
@@ -111,7 +114,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
                 isEnabled = false
                 phase = .failed
                 message = error.localizedDescription
-                refreshHelper()
+                refreshTunnel()
                 throw error
             }
         } else {
@@ -124,73 +127,48 @@ public final class BlockingStore: BlockingStoreReadAccess {
             do { try await backend.deactivate() } catch { message = error.localizedDescription }
             phase = .off
         }
-        refreshHelper()
+        refreshTunnel()
     }
 
-    private func ensureHelper() async throws {
-        let state = backend.installation
-        if !state.installed || !state.upToDate {
-            message = state.installed ? "Updating the DNS helper…" : "Installing the DNS helper…"
+    /// First use: macOS asks the user to allow Bouncer's VPN configuration.
+    private func ensureTunnel() async throws {
+        if !backend.installation.installed {
+            message = "Allow Bouncer's DNS tunnel when macOS asks…"
             try await backend.install()
             message = nil
         }
-        refreshHelper()
+        refreshTunnel()
     }
 
-    func installHelper() async throws {
-        let wasOn = isEnabled
-        do {
-            try await backend.install()
-        } catch {
-            refreshHelper()
+    func installTunnel() async throws {
+        do { try await backend.install() } catch {
+            refreshTunnel()
             throw error
         }
-        refreshHelper()
-        if wasOn {
-            phase = .off
-            try await setEnabled(true)
-        }
+        refreshTunnel()
     }
 
-    func uninstallHelper() async throws {
+    func removeTunnel() async throws {
         try await setEnabled(false)
         try await backend.uninstall()
-        refreshHelper()
+        refreshTunnel()
     }
 
-    public func refreshHelper() {
-        helper = backend.installation
-        helperConnected = backend.isConnected
+    public func refreshTunnel() {
+        tunnel = backend.installation
+        tunnelConnected = backend.isConnected
     }
 
-    /// The helper already removed blocks when the connection dropped. If blocking
-    /// is still wanted (e.g. the helper was updated or restarted), re-activate.
+    /// Filtering stopped underneath us (e.g. another VPN replaced the tunnel).
+    /// Don't fight it: report that blocking is off.
     private func connectionLost(_ reason: String) {
-        refreshHelper()
-        guard isEnabled, phase == .on else { return }
-        phase = .starting
-        message = "\(reason) Reconnecting…"
-        reconnectTask?.cancel()
-        reconnectTask = Task { @MainActor [weak self] in
-            for delay in [0.5, 1, 2, 4, 8] {
-                try? await Task.sleep(for: .seconds(delay))
-                guard let self, !Task.isCancelled, self.isEnabled else { return }
-                do {
-                    try await self.backend.activate(rules: self.rules, options: self.options)
-                    self.phase = .on
-                    self.message = nil
-                    self.refreshHelper()
-                    self.verifyResolution()
-                    return
-                } catch {
-                    self.message = "\(reason) \(error.localizedDescription)"
-                }
-            }
-            guard let self, !Task.isCancelled else { return }
-            self.isEnabled = false
-            self.phase = .failed
-            self.refreshHelper()
-        }
+        verification?.cancel()
+        dnsVerified = nil
+        refreshTunnel()
+        guard isEnabled || phase != .off else { return }
+        isEnabled = false
+        phase = .failed
+        message = reason
     }
 
     /// Proves end to end that the system resolver reaches the filter.
@@ -302,7 +280,6 @@ public final class BlockingStore: BlockingStoreReadAccess {
 
     /// Called as the app terminates; blocks must never outlive Bouncer.
     func shutdown() {
-        reconnectTask?.cancel()
         verification?.cancel()
         if phase != .off || backend.isConnected { backend.deactivateBeforeExit(timeout: 3) }
         isEnabled = false

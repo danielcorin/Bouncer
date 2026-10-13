@@ -31,6 +31,9 @@ public final class BouncerService: ApplicationOperations {
         await store.applyOptions(configuration.filterOptions)
     }
 
+    /// Loads saved tunnel state; call once at launch.
+    public func start() async { await store.prepare() }
+
     public func shutdown() { store.shutdown() }
 
     // MARK: - App
@@ -60,14 +63,14 @@ public final class BouncerService: ApplicationOperations {
         return state()
     }
 
-    public func helperInstall(_ input: APIInputs.HelperInstall) async throws -> APIData.BlockingState {
-        try await store.installHelper()
+    public func tunnelInstall(_ input: APIInputs.TunnelInstall) async throws -> APIData.BlockingState {
+        try await store.installTunnel()
         return state()
     }
 
-    public func helperUninstall(_ input: APIInputs.HelperUninstall) async throws -> APIData.BlockingState {
-        guard input.force else { throw AutomationFailure("confirmation_required", "Pass --force true to remove the helper.") }
-        try await store.uninstallHelper()
+    public func tunnelRemove(_ input: APIInputs.TunnelRemove) async throws -> APIData.BlockingState {
+        guard input.force else { throw AutomationFailure("confirmation_required", "Pass --force true to remove the tunnel configuration.") }
+        try await store.removeTunnel()
         return state()
     }
 
@@ -112,10 +115,10 @@ public final class BouncerService: ApplicationOperations {
     // MARK: - Wire mapping
 
     func state() -> APIData.BlockingState {
-        store.refreshHelper()
+        store.refreshTunnel()
         return .init(enabled: store.isEnabled, phase: .init(rawValue: store.phase.rawValue) ?? .off, message: store.message,
-                     helper: .init(installed: store.helper.installed, upToDate: store.helper.upToDate, connected: store.helperConnected),
-                     ruleCount: store.rules.count, blockedCount: store.blockedCount, hotkey: hotkey, dnsVerified: store.dnsVerified)
+                     ruleCount: store.rules.count, blockedCount: store.blockedCount, hotkey: hotkey, dnsVerified: store.dnsVerified,
+                     tunnel: .init(installed: store.tunnel.installed, connected: store.tunnelConnected))
     }
 
     static func wire(_ rule: FilterRule) -> APIData.Rule {

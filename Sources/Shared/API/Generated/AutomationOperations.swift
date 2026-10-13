@@ -113,25 +113,6 @@ public enum APIInputs {
             try c.encodeIfPresent(content, forKey: .content)
         }
     }
-    public struct HelperInstall: Codable, Sendable {
-        public init() {
-        }
-    }
-    public struct HelperUninstall: Codable, Sendable {
-        public var force: Bool
-        public init(force: Bool) {
-            self.force = force
-        }
-        enum CodingKeys: String, CodingKey { case force }
-        public init(from decoder: Decoder) throws {
-            let c = try decoder.container(keyedBy: CodingKeys.self)
-            force = try c.decode(Bool.self, forKey: .force)
-        }
-        public func encode(to encoder: Encoder) throws {
-            var c = encoder.container(keyedBy: CodingKeys.self)
-            try c.encode(force, forKey: .force)
-        }
-    }
     public struct Quit: Codable, Sendable {
         public init() {
         }
@@ -230,6 +211,25 @@ public enum APIInputs {
     }
     public struct Status: Codable, Sendable {
         public init() {
+        }
+    }
+    public struct TunnelInstall: Codable, Sendable {
+        public init() {
+        }
+    }
+    public struct TunnelRemove: Codable, Sendable {
+        public var force: Bool
+        public init(force: Bool) {
+            self.force = force
+        }
+        enum CodingKeys: String, CodingKey { case force }
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            force = try c.decode(Bool.self, forKey: .force)
+        }
+        public func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(force, forKey: .force)
         }
     }
 }
@@ -350,28 +350,6 @@ public enum APIOperations {
             return try await configuration.configValidate(input)
         }
     }
-    public enum HelperInstall: LocalAppOperation {
-        public typealias Input = APIInputs.HelperInstall
-        public typealias Output = Components.Schemas.BlockingState
-        public static let definition: OperationDefinition = .init(id: "helperInstall", command: ["helper", "install"], summary: "Install or update the privileged DNS helper (asks for an admin password)", method: "POST", path: "/v1/helper/install", fields: [
-
-        ], destructive: false, upload: false, download: false, responseSchema: "#/components/schemas/BlockingStateResult", capabilities: ["running-app"])
-        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
-            try definition.validate(JSONValue.encode(input))
-            return try await application.helperInstall(input)
-        }
-    }
-    public enum HelperUninstall: LocalAppOperation {
-        public typealias Input = APIInputs.HelperUninstall
-        public typealias Output = Components.Schemas.BlockingState
-        public static let definition: OperationDefinition = .init(id: "helperUninstall", command: ["helper", "uninstall"], summary: "Turn blocking off and remove the privileged helper", method: "POST", path: "/v1/helper/uninstall", fields: [
-            .init(name: "force", location: "body", type: "boolean", required: true, nullable: false, option: "--force", argument: nil, description: "Confirm removing the privileged helper.")
-        ], destructive: true, upload: false, download: false, responseSchema: "#/components/schemas/BlockingStateResult", capabilities: ["running-app"])
-        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
-            try definition.validate(JSONValue.encode(input))
-            return try await application.helperUninstall(input)
-        }
-    }
     public enum Quit: LocalAppOperation {
         public typealias Input = APIInputs.Quit
         public typealias Output = Components.Schemas.Message
@@ -466,6 +444,28 @@ public enum APIOperations {
             return try await application.status(input)
         }
     }
+    public enum TunnelInstall: LocalAppOperation {
+        public typealias Input = APIInputs.TunnelInstall
+        public typealias Output = Components.Schemas.BlockingState
+        public static let definition: OperationDefinition = .init(id: "tunnelInstall", command: ["tunnel", "install"], summary: "Install or repair Bouncer\'s DNS tunnel configuration (macOS asks you to allow it once)", method: "POST", path: "/v1/tunnel/install", fields: [
+
+        ], destructive: false, upload: false, download: false, responseSchema: "#/components/schemas/BlockingStateResult", capabilities: ["running-app"])
+        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
+            try definition.validate(JSONValue.encode(input))
+            return try await application.tunnelInstall(input)
+        }
+    }
+    public enum TunnelRemove: LocalAppOperation {
+        public typealias Input = APIInputs.TunnelRemove
+        public typealias Output = Components.Schemas.BlockingState
+        public static let definition: OperationDefinition = .init(id: "tunnelRemove", command: ["tunnel", "remove"], summary: "Turn blocking off and remove the tunnel configuration", method: "POST", path: "/v1/tunnel/remove", fields: [
+            .init(name: "force", location: "body", type: "boolean", required: true, nullable: false, option: "--force", argument: nil, description: "Confirm removing the VPN configuration.")
+        ], destructive: true, upload: false, download: false, responseSchema: "#/components/schemas/BlockingStateResult", capabilities: ["running-app"])
+        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
+            try definition.validate(JSONValue.encode(input))
+            return try await application.tunnelRemove(input)
+        }
+    }
 }
 
 public enum OperationID: String, Codable, CaseIterable, Sendable {
@@ -479,8 +479,6 @@ public enum OperationID: String, Codable, CaseIterable, Sendable {
     case configSet
     case configUnset
     case configValidate
-    case helperInstall
-    case helperUninstall
     case quit
     case ruleAdd
     case ruleList
@@ -489,6 +487,8 @@ public enum OperationID: String, Codable, CaseIterable, Sendable {
     case ruleUpdate
     case show
     case status
+    case tunnelInstall
+    case tunnelRemove
 }
 
 public protocol ApplicationOperations: Sendable {
@@ -496,8 +496,6 @@ public protocol ApplicationOperations: Sendable {
     func blockingOff(_ input: APIInputs.BlockingOff) async throws -> Components.Schemas.BlockingState
     func blockingOn(_ input: APIInputs.BlockingOn) async throws -> Components.Schemas.BlockingState
     func blockingToggle(_ input: APIInputs.BlockingToggle) async throws -> Components.Schemas.BlockingState
-    func helperInstall(_ input: APIInputs.HelperInstall) async throws -> Components.Schemas.BlockingState
-    func helperUninstall(_ input: APIInputs.HelperUninstall) async throws -> Components.Schemas.BlockingState
     func quit(_ input: APIInputs.Quit) async throws -> Components.Schemas.Message
     func ruleAdd(_ input: APIInputs.RuleAdd) async throws -> Components.Schemas.Rule
     func ruleList(_ input: APIInputs.RuleList) async throws -> Components.Schemas.RuleList
@@ -506,6 +504,8 @@ public protocol ApplicationOperations: Sendable {
     func ruleUpdate(_ input: APIInputs.RuleUpdate) async throws -> Components.Schemas.Rule
     func show(_ input: APIInputs.Show) async throws -> Components.Schemas.Message
     func status(_ input: APIInputs.Status) async throws -> Components.Schemas.AppStatus
+    func tunnelInstall(_ input: APIInputs.TunnelInstall) async throws -> Components.Schemas.BlockingState
+    func tunnelRemove(_ input: APIInputs.TunnelRemove) async throws -> Components.Schemas.BlockingState
 }
 public extension ApplicationOperations {
     func dispatchApplication(_ request: AutomationRequest) async throws -> JSONValue? {
@@ -522,12 +522,6 @@ public extension ApplicationOperations {
         case "blockingToggle":
             try APIOperations.BlockingToggle.definition.validate(request.input)
             return try await JSONValue.encode(blockingToggle(request.input.decode(APIInputs.BlockingToggle.self)))
-        case "helperInstall":
-            try APIOperations.HelperInstall.definition.validate(request.input)
-            return try await JSONValue.encode(helperInstall(request.input.decode(APIInputs.HelperInstall.self)))
-        case "helperUninstall":
-            try APIOperations.HelperUninstall.definition.validate(request.input)
-            return try await JSONValue.encode(helperUninstall(request.input.decode(APIInputs.HelperUninstall.self)))
         case "quit":
             try APIOperations.Quit.definition.validate(request.input)
             return try await JSONValue.encode(quit(request.input.decode(APIInputs.Quit.self)))
@@ -552,6 +546,12 @@ public extension ApplicationOperations {
         case "status":
             try APIOperations.Status.definition.validate(request.input)
             return try await JSONValue.encode(status(request.input.decode(APIInputs.Status.self)))
+        case "tunnelInstall":
+            try APIOperations.TunnelInstall.definition.validate(request.input)
+            return try await JSONValue.encode(tunnelInstall(request.input.decode(APIInputs.TunnelInstall.self)))
+        case "tunnelRemove":
+            try APIOperations.TunnelRemove.definition.validate(request.input)
+            return try await JSONValue.encode(tunnelRemove(request.input.decode(APIInputs.TunnelRemove.self)))
         default: return nil
         }
     }

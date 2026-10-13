@@ -1,35 +1,34 @@
 import Foundation
 
-public struct HelperInstallation: Equatable, Sendable {
+public struct TunnelInstallation: Equatable, Sendable {
+    /// The VPN configuration is saved (the user allowed it once in macOS).
     public var installed: Bool
-    public var upToDate: Bool
-    public init(installed: Bool, upToDate: Bool) {
-        self.installed = installed
-        self.upToDate = upToDate
-    }
+    public init(installed: Bool) { self.installed = installed }
 }
 
-/// What `BlockingStore` needs from the system. The app uses `HelperFilterBackend`;
+/// What `BlockingStore` needs from the system. The app uses `TunnelFilterBackend`;
 /// tests and the automation fixture inject an in-memory implementation.
 @MainActor
 public protocol FilterBackend: AnyObject {
-    var installation: HelperInstallation { get }
+    var installation: TunnelInstallation { get }
     var isConnected: Bool { get }
     /// Called for every lookup the filter blocked.
     var onBlocked: ((BlockedLookup) -> Void)? { get set }
-    /// Called when the helper connection drops unexpectedly (blocks are gone).
+    /// Called when filtering stops without the app asking (blocks are gone).
     var onDisconnect: ((String) -> Void)? { get set }
 
+    /// Loads saved state; call once before reading `installation`.
+    func refresh() async
     func install() async throws
     func uninstall() async throws
     func activate(rules: [FilterRule], options: FilterOptions) async throws
     func update(rules: [FilterRule], options: FilterOptions) async throws
     func deactivate() async throws
-    /// Best-effort teardown while the app terminates; the helper also removes
-    /// blocks on its own when this process's connection closes.
+    /// Synchronous teardown while the app terminates. If the app dies without
+    /// getting here, the tunnel stops itself when heartbeats cease.
     func deactivateBeforeExit(timeout: TimeInterval)
     /// Resolves a self-test name through the normal system resolver; true when the
-    /// answer came from Bouncer's filter rather than a bypass such as Private Relay.
+    /// answer came from Bouncer's filter rather than some bypass.
     func verifySystemResolution() async -> Bool
 }
 

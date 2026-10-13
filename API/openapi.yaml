@@ -844,13 +844,13 @@
         ]
       }
     },
-    "/v1/helper/install": {
+    "/v1/tunnel/install": {
       "post": {
-        "operationId": "helperInstall",
-        "summary": "Install or update the privileged DNS helper (asks for an admin password)",
+        "operationId": "tunnelInstall",
+        "summary": "Install or repair Bouncer's DNS tunnel configuration (macOS asks you to allow it once)",
         "x-cli": {
           "command": [
-            "helper",
+            "tunnel",
             "install"
           ],
           "bindings": {}
@@ -882,14 +882,14 @@
         ]
       }
     },
-    "/v1/helper/uninstall": {
+    "/v1/tunnel/remove": {
       "post": {
-        "operationId": "helperUninstall",
-        "summary": "Turn blocking off and remove the privileged helper",
+        "operationId": "tunnelRemove",
+        "summary": "Turn blocking off and remove the tunnel configuration",
         "x-cli": {
           "command": [
-            "helper",
-            "uninstall"
+            "tunnel",
+            "remove"
           ],
           "bindings": {
             "body.force": {
@@ -927,7 +927,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/HelperUninstallBody"
+                "$ref": "#/components/schemas/TunnelRemoveBody"
               }
             }
           }
@@ -1264,27 +1264,6 @@
         "required": [],
         "additionalProperties": false
       },
-      "HelperStatus": {
-        "type": "object",
-        "description": "The privileged DNS helper that applies blocks system-wide.",
-        "properties": {
-          "installed": {
-            "type": "boolean"
-          },
-          "upToDate": {
-            "type": "boolean"
-          },
-          "connected": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "installed",
-          "upToDate",
-          "connected"
-        ],
-        "additionalProperties": false
-      },
       "BlockingState": {
         "type": "object",
         "properties": {
@@ -1305,9 +1284,6 @@
           "message": {
             "type": "string"
           },
-          "helper": {
-            "$ref": "#/components/schemas/HelperStatus"
-          },
           "ruleCount": {
             "type": "integer"
           },
@@ -1320,13 +1296,16 @@
           },
           "dnsVerified": {
             "type": "boolean",
-            "description": "While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown."
+            "description": "While on: whether a test lookup through the system resolver reached Bouncer's filter. False means something bypasses the blocks. Absent while unknown."
+          },
+          "tunnel": {
+            "$ref": "#/components/schemas/TunnelStatus"
           }
         },
         "required": [
           "enabled",
           "phase",
-          "helper",
+          "tunnel",
           "ruleCount",
           "blockedCount",
           "hotkey"
@@ -1494,19 +1473,6 @@
         "required": [],
         "additionalProperties": false
       },
-      "HelperUninstallBody": {
-        "type": "object",
-        "properties": {
-          "force": {
-            "type": "boolean",
-            "description": "Confirm removing the privileged helper."
-          }
-        },
-        "required": [
-          "force"
-        ],
-        "additionalProperties": false
-      },
       "BlockingStateResult": {
         "type": "object",
         "properties": {
@@ -1584,6 +1550,38 @@
         "required": [
           "requestId",
           "data"
+        ],
+        "additionalProperties": false
+      },
+      "TunnelStatus": {
+        "type": "object",
+        "description": "Bouncer's DNS tunnel (a Network Extension VPN configuration that only handles DNS).",
+        "properties": {
+          "installed": {
+            "type": "boolean",
+            "description": "The VPN configuration is saved in System Settings."
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "The tunnel is running."
+          }
+        },
+        "required": [
+          "installed",
+          "connected"
+        ],
+        "additionalProperties": false
+      },
+      "TunnelRemoveBody": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "description": "Confirm removing the VPN configuration."
+          }
+        },
+        "required": [
+          "force"
         ],
         "additionalProperties": false
       }

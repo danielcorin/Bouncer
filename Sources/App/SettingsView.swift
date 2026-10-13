@@ -29,7 +29,7 @@ struct SettingsView: View {
     @State private var upstream = ""
     @State private var testDomain = ""
     @State private var testResult: String?
-    @State private var helperMessage: String?
+    @State private var tunnelMessage: String?
     @State private var cliMessage: String?
     @State private var confirmUninstall = false
 
@@ -50,7 +50,7 @@ struct SettingsView: View {
                 Toggle("Flash the menu bar when a site is blocked", isOn: binding(.flashIndicator, \.flashIndicator))
                 Toggle(isOn: binding(.blockBypassCanaries, \.blockBypassCanaries)) {
                     Text("Prevent DNS bypass while blocking")
-                    Text("Signals Firefox DNS-over-HTTPS and iCloud Private Relay to use system DNS so blocks apply to them too.")
+                    Text("Signals Firefox's DNS-over-HTTPS to use system DNS so blocks apply to it too.")
                 }
                 LabeledContent("Upstream DNS") {
                     TextField("Automatic (network DHCP)", text: $upstream)
@@ -72,17 +72,20 @@ struct SettingsView: View {
                 }
             }
 
-            Section("System helper") {
-                LabeledContent("Status", value: helperStatus)
+            Section("DNS tunnel") {
+                LabeledContent("Status", value: tunnelStatus)
                 HStack {
-                    Button(store.helper.installed ? "Reinstall Helper" : "Install Helper") {
-                        perform { _ = try await service.helperInstall(.init()) }
+                    Button(store.tunnel.installed ? "Reinstall Configuration" : "Install Configuration") {
+                        perform { _ = try await service.tunnelInstall(.init()) }
                     }
-                    Button("Uninstall Helper…") { confirmUninstall = true }
-                        .disabled(!store.helper.installed)
+                    Button("Remove Configuration…") { confirmUninstall = true }
+                        .disabled(!store.tunnel.installed)
                 }
-                if let helperMessage {
-                    Text(helperMessage).font(.caption).foregroundStyle(.red).textSelection(.enabled)
+                Text("Bouncer blocks by running a VPN-style tunnel that only handles DNS. It appears as “Bouncer” in System Settings › VPN and runs only while blocking is on.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let tunnelMessage {
+                    Text(tunnelMessage).font(.caption).foregroundStyle(.red).textSelection(.enabled)
                 }
             }
 
@@ -112,22 +115,20 @@ struct SettingsView: View {
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
             upstream = config.upstreamDNS.joined(separator: ", ")
-            store.refreshHelper()
+            store.refreshTunnel()
         }
-        .confirmationDialog("Remove Bouncer's DNS helper?", isPresented: $confirmUninstall) {
-            Button("Uninstall", role: .destructive) {
-                perform { _ = try await service.helperUninstall(.init(force: true)) }
+        .confirmationDialog("Remove Bouncer's DNS tunnel configuration?", isPresented: $confirmUninstall) {
+            Button("Remove", role: .destructive) {
+                perform { _ = try await service.tunnelRemove(.init(force: true)) }
             }
         } message: {
-            Text("Blocking turns off. You'll be asked for an administrator password again next time you enable it.")
+            Text("Blocking turns off. macOS will ask you to allow the tunnel again next time you enable it.")
         }
     }
 
-    private var helperStatus: String {
-        guard store.helper.installed else { return "Not installed — installs the first time you turn blocking on" }
-        var parts = [store.helper.upToDate ? "Installed" : "Installed (update available)"]
-        parts.append(store.helperConnected ? "connected" : "idle")
-        return parts.joined(separator: ", ")
+    private var tunnelStatus: String {
+        guard store.tunnel.installed else { return "Not installed — installs the first time you turn blocking on" }
+        return store.tunnelConnected ? "Installed, running" : "Installed, stopped"
     }
 
     private func binding(_ key: AppConfigurationKey, _ path: KeyPath<AppConfiguration, Bool>) -> Binding<Bool> {
@@ -154,9 +155,9 @@ struct SettingsView: View {
         Task { @MainActor in
             do {
                 try await work()
-                helperMessage = nil
+                tunnelMessage = nil
             } catch {
-                helperMessage = MacAutomationErrors.normalize(error).message
+                tunnelMessage = MacAutomationErrors.normalize(error).message
             }
         }
     }

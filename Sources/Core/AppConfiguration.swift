@@ -42,7 +42,7 @@ public enum AppConfigurationKey: String, CaseIterable, Codable, Sendable {
         case .enableOnLaunch: "Turn blocking on when Bouncer launches. Blocks are always removed when it quits."
         case .flashIndicator: "Briefly flash the menu bar icon and blocked domain when Bouncer blocks a lookup."
         case .hotkey: "Global shortcut that toggles blocking, e.g. ctrl+option+cmd+b. Use modifiers ctrl, option, shift, cmd. Empty disables it."
-        case .blockBypassCanaries: "While blocking, answer NXDOMAIN for Firefox's DNS-over-HTTPS and iCloud Private Relay canary domains so they fall back to system DNS."
+        case .blockBypassCanaries: "While blocking, answer NXDOMAIN for Firefox's DNS-over-HTTPS canary domain so Firefox falls back to system DNS."
         case .upstreamDNS: "Comma-separated resolver IPs to forward allowed lookups to. Empty follows the network's DHCP servers."
         }
     }
