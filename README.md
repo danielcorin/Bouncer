@@ -61,6 +61,8 @@ configuration; after that, toggling never prompts.
   `bouncer config set hotkey --value "shift+cmd+f12"`).
 - **Restart browser**: the ↻ Restart button in the menu's footer quits and reopens
   your default browser so it drops connections to sites you just blocked.
+- **Restart browser**: the ↻ Restart button in the menu's footer quits and reopens
+  your default browser so it drops connections to sites you just blocked.
 - **About**: the ⓘ button in the menu (or Settings › About) shows the version, how
   blocking works, and the shortcuts.
 - **Indicator**: when a lookup is blocked, the menu bar icon turns into a red hand
