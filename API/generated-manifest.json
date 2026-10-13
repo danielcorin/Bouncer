@@ -2,7 +2,7 @@
   "inputs": {
     "API/generation.json": "d534d8920136a78492499860547b908e30479ee73c6a963b09dd56b2871742a7",
     "API/openapi.yaml": "3799ac429f9c9096eb28241a72ee20ff653110928802e405106d344f74180fd5",
-    "Configuration/Package.resolved": "a1e5bad3f65098185bf6da5f10596b0b8d343483906817479048151fd9c3ce2b",
+    "Configuration/Package.resolved": "ba9c95e422d34408b2f72136545ccdeca581e507cb3ed3baed141acbb1afe4d2",
     "Packages/AppAutomation/Package.resolved": "b616c49d7edf238de640026f072560ecfc5f6924bfa710cfa736d81f6129e89c",
     "Packages/AppAutomation/Package.swift": "34ef708ad9c92093e253daf8740bcdd2bb6a1590240432f9c07d007af871debd",
     "Packages/AppAutomation/Sources/AutomationCLI/CLIEnvironment.swift": "e22ac4f0a94e54148ab90beedeab892d86504b77d8e4d33e5753637f29244a59",

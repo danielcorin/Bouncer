@@ -33,6 +33,10 @@ enum SnapshotRenderer {
         _ = try? await service.blockingOn(.init())
         try? await Task.sleep(for: .seconds(3)) // let the self-test settle
         await render(menu(), "menu-on", into: directory)
+        // README image: activity collected, switch off (offscreen windows can't
+        // render an active switch, so "on" would look inconsistent).
+        _ = try? await service.blockingOff(.init())
+        await render(menu(), "menu-showcase", into: directory)
         backend.failNext = true
         _ = try? await service.blockingOff(.init())
         _ = try? await service.blockingOn(.init())

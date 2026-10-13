@@ -35,6 +35,6 @@ uses (Dock, Spotlight, Launch Services, and drag-onto-icon all behave normally).
 ## Notes
 
 - Ad-hoc signed builds run locally but are not distributable; use
-  `scripts/publish-release.sh` for notarized releases.
+  `scripts/try-dev.sh`, which development-signs the DNS tunnel extension (ad-hoc builds can't run it).
 - If the app owns a companion CLI symlink, recheck that it targets
   `<App>.app/Contents/Helpers/<cli>` under `/Applications` after installation.

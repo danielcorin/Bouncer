@@ -1,12 +1,56 @@
-<p align="center">
-  <img src="Sources/App/Assets.xcassets/AppIcon.appiconset/icon_256.png" width="128" alt="Bouncer app icon: a white shield with a no-entry bar on deep teal">
-</p>
-
 # Bouncer
 
-A menu bar app that blocks domains system-wide (every browser and app), with
-plain-domain and regex rules, a toggle, a global hotkey, and a `bouncer` CLI.
-When Bouncer quits — or crashes, or is force-quit — every block is removed.
+<p align="center">
+  <img src="docs/icon.png" width="128" height="128" alt="Bouncer app icon: a white shield with a no-entry bar on deep teal">
+</p>
+
+Bouncer is a native macOS menu bar app that blocks the sites you don't want to
+visit — in every browser and app, including with iCloud Private Relay on. Rules
+are plain domains or regular expressions, blocking toggles from the menu bar, a
+global hotkey, or the bundled `bouncer` command-line tool, and **quitting Bouncer
+always removes every block**.
+
+<p align="center">
+  <img src="docs/menu.png" width="340" alt="Bouncer's menu bar panel: a blocking switch, a field to add rules, the rule list with an allow rule, and recently blocked domains">
+</p>
+
+## Features
+
+- Block by domain (`reddit.com` covers every subdomain), subdomains only
+  (`*.example.com`), or case-insensitive regex (`/tiktok|instagram/`).
+- Allow rules override block rules, so `/.*/` plus a few allow rules is an
+  allowlist-only mode.
+- A switch in the menu bar panel, Option-click on the icon, or a system-wide
+  hotkey (⌃⌥⌘B by default) toggles blocking — no Accessibility permission needed.
+- The menu bar icon briefly flashes the domain whenever Bouncer turns a lookup away,
+  and the panel lists recently blocked domains.
+- Works in Safari, Chromium browsers, Firefox, and every other app, with or
+  without iCloud Private Relay. A built-in self-test warns if something bypasses it.
+- A `bouncer` CLI with `--json` output that can do everything the UI does.
+- Plain-text settings in `~/.config/bouncer/config.toml`.
+- No administrator password, no root daemon, no analytics. Bouncer's only network
+  traffic is forwarding your allowed DNS lookups to your normal resolvers.
+
+## Install (build from source)
+
+Bouncer blocks through a Network Extension packet tunnel. macOS only runs that kind
+of extension when it's signed with a provisioning profile, so there is no
+notarized download; build it under your own Apple developer team instead.
+
+Requirements: macOS 14 or later, Xcode 26, [mise](https://mise.jdx.dev), and an
+Apple Developer Program membership (for the Network Extension capability).
+
+```sh
+git clone https://github.com/danielcorin/Bouncer.git && cd Bouncer
+mise install
+cp Configuration/Local.xcconfig.example Configuration/Local.xcconfig
+# Edit Local.xcconfig: set DEVELOPMENT_TEAM to your Team ID and
+# PRODUCT_BUNDLE_IDENTIFIER to an ID you own (the tunnel becomes <ID>.Tunnel).
+scripts/try-dev.sh   # builds, provisions, installs to /Applications, and launches
+```
+
+The first time you turn blocking on, macOS asks you to allow Bouncer's VPN
+configuration; after that, toggling never prompts.
 
 ## Using it
 
@@ -19,9 +63,6 @@ When Bouncer quits — or crashes, or is force-quit — every block is removed.
   blocking works, and the shortcuts.
 - **Indicator**: when a lookup is blocked, the menu bar icon turns into a red hand
   and shows the blocked domain for a couple of seconds.
-- **First use**: the first time you turn blocking on, macOS asks you to allow
-  Bouncer's VPN configuration. After that, toggling never prompts. No administrator
-  password is needed, and nothing outside the tunnel is changed.
 
 ### Rules
 
@@ -102,13 +143,14 @@ every app's DNS. So Bouncer filters DNS inside a Network Extension:
   connections don't do new DNS lookups. Reload, or restart the browser.
 - macOS runs one VPN at a time. Starting another VPN disconnects Bouncer's tunnel;
   Bouncer then reports that blocking stopped rather than fighting it.
-- Verified with iCloud Private Relay on (2026-10-13): Safari, Helium (Chromium),
-  curl, and the system resolver all resolve through the tunnel and are blocked.
+- Tested with iCloud Private Relay on: Safari, a Chromium-based browser, curl, and
+  the system resolver all resolve through the tunnel and are blocked.
 - Browsers with a hard-coded DNS-over-HTTPS provider (Chrome/Edge "Secure DNS" set
   to a specific provider, Firefox "Max Protection") bypass system DNS.
-- The tunnel is a development-signed app extension (personal use). Distributing
-  Bouncer would mean moving it to a Developer ID system extension (notarized, with
-  a one-time approval in System Settings).
+- The tunnel is an app extension, which macOS runs only with development or App
+  Store signing, so each user builds Bouncer under their own team. A notarized
+  download would mean moving it to a Developer ID system extension (with a
+  one-time approval in System Settings).
 - Tunnel logs: `log show --last 10m --predicate 'subsystem == "llc.wvlen.Bouncer.Tunnel"'`.
 
 ## Development
@@ -123,15 +165,21 @@ BOUNCER_SNAPSHOT_DIR=$(mktemp -d) build/Build/Products/Debug/Bouncer.app/Content
 swift scripts/generate-app-icon.swift  # re-render the icon (AppIcon.icon glyph + legacy PNGs); colors live at the top
 ```
 
-`project.yml` is the Xcode source of truth; set `DEVELOPMENT_TEAM` in the ignored
-`Configuration/Local.xcconfig`. Targets:
+`project.yml` is the Xcode source of truth; set `DEVELOPMENT_TEAM` and
+`PRODUCT_BUNDLE_IDENTIFIER` in the ignored `Configuration/Local.xcconfig`. Pull
+requests run `scripts/verify.sh` in CI. Targets:
 
 - `Sources/Filter` — rule matching, DNS packets, the filter engine, tunnel wire protocol (app + tunnel)
 - `Sources/Tunnel` — the packet tunnel extension: virtual resolver, forwarding, heartbeat watchdog
 - `Sources/Core` — `BlockingStore`, `BouncerService` (every operation), `TunnelFilterBackend`, TOML settings
-- `Sources/App` — status item, popover, settings window, Carbon hotkey
+- `Sources/App` — status item, menu bar panel, Settings and About windows, Carbon hotkey
 - `Sources/CLI` — generated commands plus renderers in `Custom/`
 
 Follow [docs/interface-consistency.md](docs/interface-consistency.md) when adding a
 feature: contract in `API/openapi.yaml`, implementation in `BouncerService`, a
 scenario in `TestsSupport/AppScenarios.swift`, UI calling the same service.
+
+## License
+
+Bouncer is available under the [Apache License 2.0](LICENSE). Third-party
+components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -30,7 +30,7 @@ settings:
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
-    ENABLE_HARDENED_RUNTIME: "YES"      # required for notarization
+    ENABLE_HARDENED_RUNTIME: "YES"
     GENERATE_INFOPLIST_FILE: "YES"
     DEAD_CODE_STRIPPING: "YES"
     # The app embeds the companion CLI after it is built. Xcode's user-script
@@ -161,7 +161,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: BouncerTunnel
-        PRODUCT_BUNDLE_IDENTIFIER: llc.wvlen.Bouncer.Tunnel
+        PRODUCT_BUNDLE_IDENTIFIER: $(inherited).Tunnel
         GENERATE_INFOPLIST_FILE: "NO"
     entitlements:
       path: Sources/Tunnel/Tunnel.entitlements

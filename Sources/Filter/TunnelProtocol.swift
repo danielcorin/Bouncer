@@ -2,7 +2,11 @@ import Foundation
 
 /// Identity and addresses shared by the app and its packet tunnel extension.
 public enum TunnelConstants {
-    public static let providerBundleIdentifier = "llc.wvlen.Bouncer.Tunnel"
+    /// The embedded extension's bundle ID is always the app's plus ".Tunnel"
+    /// (see project.yml), so forks only need to change PRODUCT_BUNDLE_IDENTIFIER.
+    public static var providerBundleIdentifier: String {
+        (Bundle.main.bundleIdentifier ?? "llc.wvlen.Bouncer") + ".Tunnel"
+    }
     public static let configurationName = "Bouncer"
     /// The virtual resolver inside the tunnel; the only route the tunnel claims.
     public static let dnsServer = "198.18.0.1"
