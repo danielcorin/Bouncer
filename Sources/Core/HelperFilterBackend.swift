@@ -38,10 +38,6 @@ public final class HelperFilterBackend: FilterBackend {
         }
         connection?.close()
         connection = nil
-        let staging = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
-                                                  appropriateFor: FileManager.default.temporaryDirectory, create: true)
-        defer { try? FileManager.default.removeItem(at: staging) }
-        let plistURL = staging.appendingPathComponent("\(HelperConstants.label).plist")
         let plist: [String: Any] = [
             "Label": HelperConstants.label,
             "ProgramArguments": [HelperConstants.installedBinaryPath, "--owner-uid", String(getuid())],
@@ -49,14 +45,18 @@ public final class HelperFilterBackend: FilterBackend {
             "KeepAlive": true,
             "StandardErrorPath": "/var/log/\(HelperConstants.label).log",
         ]
-        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: plistURL)
+        // Embed the plist in the command: root can't read files in the user's
+        // protected temporary directories ("Operation not permitted").
+        let encodedPlist = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).base64EncodedString()
 
         let binary = HelperConstants.installedBinaryPath, daemon = HelperConstants.launchDaemonPath
         let script = [
             "/bin/launchctl bootout system/\(HelperConstants.label) 2>/dev/null || true",
             "/bin/mkdir -p /Library/PrivilegedHelperTools",
             "/usr/bin/install -o root -g wheel -m 755 \(Self.quote(bundledHelperURL.path)) \(Self.quote(binary))",
-            "/usr/bin/install -o root -g wheel -m 644 \(Self.quote(plistURL.path)) \(Self.quote(daemon))",
+            "/bin/echo \(encodedPlist) | /usr/bin/base64 -D > \(Self.quote(daemon))",
+            "/usr/sbin/chown root:wheel \(Self.quote(daemon))",
+            "/bin/chmod 644 \(Self.quote(daemon))",
             "/bin/launchctl bootstrap system \(Self.quote(daemon))",
         ].joined(separator: " && ")
         try await Self.runPrivileged(script, prompt: "Bouncer needs to install its DNS helper to block sites system-wide.")
