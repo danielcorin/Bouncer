@@ -182,6 +182,17 @@ enum BouncerMain {
     private static let delegate = AppDelegate()
 
     static func main() {
+        #if DEBUG
+        if let directory = ProcessInfo.processInfo.environment["BOUNCER_SNAPSHOT_DIR"] {
+            let app = NSApplication.shared
+            app.setActivationPolicy(.prohibited)
+            Task { @MainActor in
+                await SnapshotRenderer.run(into: URL(fileURLWithPath: directory, isDirectory: true))
+                exit(0)
+            }
+            app.run()
+        }
+        #endif
         let app = NSApplication.shared
         app.delegate = delegate
         app.setActivationPolicy(.accessory)

@@ -14,44 +14,53 @@ struct MenuView: View {
     @State private var error: String?
     @State private var editing: UUID?
     @State private var editText = ""
+    @State private var hovered: UUID?
 
     private var busy: Bool { store.phase == .starting || store.phase == .stopping }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             header
-            if let message = store.message ?? error {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(store.phase == .failed || error != nil ? .red : store.dnsVerified == false ? .orange : .secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                .padding(.bottom, notice == nil ? 12 : 10)
+            if let notice {
+                noticeView(notice)
+                    .padding(.bottom, 12)
             }
             Divider()
             addRow
+                .padding(.vertical, 12)
             rulesList
             if !store.activity.isEmpty {
-                Divider()
+                Divider().padding(.top, 10)
                 activityList
+                    .padding(.top, 10)
             }
-            Divider()
+            Divider().padding(.top, 10)
             footer
+                .padding(.top, 8)
         }
-        .padding(14)
-        .frame(width: 360)
+        .padding(.horizontal, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+        .frame(width: 340)
+        .tint(.bouncer)
     }
 
-    // MARK: - Sections
+    // MARK: - Header
 
     private var header: some View {
         HStack(alignment: .center, spacing: 10) {
-            Image(systemName: store.phase == .on ? "shield.fill" : store.phase == .failed ? "exclamationmark.shield" : "shield")
-                .font(.title2)
-                .foregroundStyle(store.phase == .on ? Color.accentColor : .secondary)
-                .frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
+            Image(systemName: headerSymbol)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(headerColor)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 1) {
                 Text("Bouncer").font(.headline)
-                Text(summary).font(.caption).foregroundStyle(.secondary)
+                Text(summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
             Spacer()
             if busy { ProgressView().controlSize(.small) }
@@ -60,6 +69,25 @@ struct MenuView: View {
                 .toggleStyle(.switch)
                 .disabled(busy)
                 .help("Toggle blocking (\(hotkeyDisplay ?? "no shortcut"))")
+        }
+    }
+
+    private var headerSymbol: String {
+        switch store.phase {
+        case .on where store.dnsVerified == false: "exclamationmark.shield.fill"
+        case .on: "shield.fill"
+        case .starting, .stopping: "shield.lefthalf.filled"
+        case .failed: "exclamationmark.shield"
+        case .off: "shield"
+        }
+    }
+
+    private var headerColor: Color {
+        switch store.phase {
+        case .on where store.dnsVerified == false: .orange
+        case .on: .bouncer
+        case .failed: .red
+        default: .secondary
         }
     }
 
@@ -73,19 +101,51 @@ struct MenuView: View {
         case .off: "Off"
         }
         let blockCount = store.rules.filter { $0.enabled && $0.action == .block }.count
-        var parts = [state, "\(blockCount) block rule\(blockCount == 1 ? "" : "s")"]
+        var parts = [state, blockCount == 0 ? "no rules" : "\(blockCount) rule\(blockCount == 1 ? "" : "s")"]
         if let hotkeyDisplay { parts.append(hotkeyDisplay) }
         return parts.joined(separator: " · ")
     }
 
     private var hotkeyDisplay: String? { HotkeyChord(configuration.configuration.hotkey)?.displayString }
 
+    // MARK: - Notices
+
+    private struct Notice {
+        var text: String
+        var isError: Bool
+    }
+
+    private var notice: Notice? {
+        if let error { return Notice(text: error, isError: true) }
+        guard let message = store.message else { return nil }
+        return Notice(text: message, isError: store.phase == .failed)
+    }
+
+    private func noticeView(_ notice: Notice) -> some View {
+        let warning = notice.isError || store.dnsVerified == false
+        let color: Color = notice.isError ? .red : warning ? .orange : .secondary
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: warning ? "exclamationmark.triangle.fill" : "info.circle")
+                .foregroundStyle(color)
+            Text(notice.text)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+        }
+        .font(.caption)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    // MARK: - Adding
+
     private var addRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                TextField("reddit.com, *.example.com, or /regex/", text: $draft)
+                TextField("Add a domain or /regex/", text: $draft)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(.body, design: .monospaced))
                     .onSubmit(addRule)
                 Picker("", selection: $draftAction) {
                     Text("Block").tag(FilterRule.Action.block)
@@ -95,28 +155,39 @@ struct MenuView: View {
                 .fixedSize()
                 Button(action: addRule) { Image(systemName: "plus") }
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .help("Add rule")
+                    .help("Add rule (Return)")
             }
-            Text("Domains include subdomains. Wrap a pattern in slashes for a case-insensitive regex. Allow rules win.")
+            Text("Includes subdomains · /pattern/ for regex · allow beats block")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
     }
 
+    // MARK: - Rules
+
     @ViewBuilder private var rulesList: some View {
         if store.rules.isEmpty {
-            Text("No rules yet.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 8)
+            VStack(spacing: 4) {
+                Image(systemName: "hand.raised")
+                    .font(.title2)
+                    .foregroundStyle(.tertiary)
+                Text("No rules yet")
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Text("Try reddit.com or /tiktok|instagram/")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
         } else {
             ScrollView {
-                LazyVStack(spacing: 2) {
+                LazyVStack(spacing: 1) {
                     ForEach(store.rules) { rule in row(rule) }
                 }
             }
-            .frame(maxHeight: min(CGFloat(store.rules.count) * 28 + 4, 240))
+            .frame(maxHeight: min(CGFloat(store.rules.count) * 27, 243))
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 
@@ -127,6 +198,7 @@ struct MenuView: View {
             }))
             .labelsHidden()
             .toggleStyle(.checkbox)
+            .help(rule.enabled ? "Disable rule" : "Enable rule")
             if editing == rule.id {
                 TextField("Pattern", text: $editText)
                     .textFieldStyle(.roundedBorder)
@@ -137,23 +209,39 @@ struct MenuView: View {
                 Text(rule.kind == .regex ? "/\(rule.pattern)/" : rule.pattern)
                     .font(.system(.callout, design: .monospaced))
                     .foregroundStyle(rule.enabled ? .primary : .tertiary)
+                    .strikethrough(!rule.enabled, color: .secondary.opacity(0.5))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .onTapGesture(count: 2) { beginEdit(rule) }
+                    .help("Double-click to edit")
             }
             Spacer(minLength: 4)
-            badge(rule.action == .allow ? "allow" : "block", color: rule.action == .allow ? .green : .red)
+            if rule.action == .allow {
+                Text("allow")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.green)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(.green.opacity(0.13), in: Capsule())
+                    .help("Allow rules override block rules")
+            }
             Button {
                 run { _ = try await service.ruleRemove(.init(id: rule.id.uuidString)) }
             } label: {
-                Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                Image(systemName: "xmark.circle.fill")
             }
             .buttonStyle(.plain)
+            .foregroundStyle(.tertiary)
+            .opacity(hovered == rule.id ? 1 : 0)
             .help("Remove rule")
         }
-        .padding(.vertical, 3)
-        .padding(.horizontal, 4)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(hovered == rule.id ? Color.primary.opacity(0.06) : .clear, in: RoundedRectangle(cornerRadius: 6))
         .contentShape(Rectangle())
+        .onHover { inside in
+            if inside { hovered = rule.id } else if hovered == rule.id { hovered = nil }
+        }
         .contextMenu {
             Button("Edit Pattern") { beginEdit(rule) }
             Button(rule.action == .block ? "Make Allow Rule" : "Make Block Rule") {
@@ -173,44 +261,69 @@ struct MenuView: View {
         }
     }
 
-    private func badge(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(color.opacity(0.12), in: Capsule())
-    }
+    // MARK: - Activity
 
     private var activityList: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Text("Recently blocked").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Recently blocked")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(store.blockedCount) since launch").font(.caption2).foregroundStyle(.tertiary)
+                Text("\(store.blockedCount) since launch")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
             }
-            ForEach(store.activity.prefix(5)) { entry in
-                HStack(spacing: 6) {
-                    Image(systemName: "hand.raised.fill").font(.caption2).foregroundStyle(.red)
-                    Text(entry.domain).font(.system(.caption, design: .monospaced)).lineLimit(1).truncationMode(.middle)
-                    if entry.count > 1 { Text("×\(entry.count)").font(.caption2).foregroundStyle(.secondary) }
-                    Spacer()
-                    Text(entry.lastSeen, style: .relative).font(.caption2).foregroundStyle(.tertiary)
+            TimelineView(.periodic(from: .now, by: 5)) { context in
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(store.activity.prefix(4)) { entry in
+                        HStack(spacing: 6) {
+                            Image(systemName: "hand.raised.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.red.opacity(0.85))
+                            Text(entry.domain)
+                                .font(.system(.caption, design: .monospaced))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            if entry.count > 1 {
+                                Text("×\(entry.count)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Spacer()
+                            Text(CompactRelativeTime.string(since: entry.lastSeen, now: context.date))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .monospacedDigit()
+                        }
+                        .help("Blocked by \(entry.rulePattern)")
+                    }
                 }
             }
         }
     }
 
+    // MARK: - Footer
+
     private var footer: some View {
-        HStack {
-            Button("Settings…", action: openSettings)
-            Button(action: openAbout) { Image(systemName: "info.circle") }
-                .help("About Bouncer")
+        HStack(spacing: 2) {
+            Button(action: openSettings) { Label("Settings…", systemImage: "gearshape") }
+                .buttonStyle(FooterButtonStyle())
+            Button(action: openAbout) { Label("About", systemImage: "info.circle") }
+                .buttonStyle(FooterButtonStyle())
             Spacer()
-            Button("Quit Bouncer  ⌘Q", action: quit)
-                .help("Quitting removes all blocks")
+            Button(action: quit) {
+                HStack(spacing: 4) {
+                    Text("Quit")
+                    Text("⌘Q").foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(FooterButtonStyle())
+            .help("Quitting removes all blocks")
         }
-        .controlSize(.small)
+        .font(.callout)
     }
 
     // MARK: - Actions
@@ -251,6 +364,29 @@ struct MenuView: View {
             } catch {
                 self.error = MacAutomationErrors.normalize(error).message
             }
+        }
+    }
+}
+
+/// Quiet, menu-like footer buttons that highlight on hover.
+private struct FooterButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HoverHighlight(isPressed: configuration.isPressed) { configuration.label }
+    }
+
+    private struct HoverHighlight<Label: View>: View {
+        let isPressed: Bool
+        @ViewBuilder let label: () -> Label
+        @State private var hovering = false
+
+        var body: some View {
+            label()
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .foregroundStyle(.secondary)
+                .background(Color.primary.opacity(isPressed ? 0.12 : hovering ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 6))
+                .contentShape(Rectangle())
+                .onHover { hovering = $0 }
         }
     }
 }

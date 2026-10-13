@@ -29,7 +29,13 @@ struct SettingsView: View {
 
     @State private var upstream = ""
     @State private var testDomain = ""
-    @State private var testResult: String?
+    @State private var testResult: TestResult?
+
+    private struct TestResult {
+        var text: String
+        var symbol: String
+        var color: Color
+    }
     @State private var tunnelMessage: String?
     @State private var cliMessage: String?
     @State private var confirmUninstall = false
@@ -53,28 +59,38 @@ struct SettingsView: View {
                     Text("Prevent DNS bypass while blocking")
                     Text("Signals Firefox's DNS-over-HTTPS to use system DNS so blocks apply to it too.")
                 }
-                LabeledContent("Upstream DNS") {
-                    TextField("Automatic (network DHCP)", text: $upstream)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 220)
-                        .onSubmit { configuration.set(.upstreamDNS, value: upstream) }
+                TextField(text: $upstream, prompt: Text("Automatic (from your network)")) {
+                    Text("Upstream DNS")
+                    Text("Comma-separated resolver IPs. Press Return to save.")
                 }
+                .onSubmit { configuration.set(.upstreamDNS, value: upstream) }
             }
 
             Section("Test a domain") {
                 HStack {
-                    TextField("news.ycombinator.com", text: $testDomain)
+                    TextField("Domain", text: $testDomain, prompt: Text("news.ycombinator.com"))
+                        .labelsHidden()
                         .textFieldStyle(.roundedBorder)
                         .onSubmit(runTest)
                     Button("Test", action: runTest).disabled(testDomain.isEmpty)
                 }
                 if let testResult {
-                    Text(testResult).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+                    Label(testResult.text, systemImage: testResult.symbol)
+                        .font(.callout)
+                        .foregroundStyle(testResult.color)
+                        .textSelection(.enabled)
                 }
             }
 
             Section("DNS tunnel") {
-                LabeledContent("Status", value: tunnelStatus)
+                LabeledContent("Status") {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(store.tunnelConnected ? Color.green : store.tunnel.installed ? Color.secondary.opacity(0.5) : Color.orange)
+                            .frame(width: 7, height: 7)
+                        Text(tunnelStatus)
+                    }
+                }
                 HStack {
                     Button(store.tunnel.installed ? "Reinstall Configuration" : "Install Configuration") {
                         perform { _ = try await service.tunnelInstall(.init()) }
@@ -100,10 +116,15 @@ struct SettingsView: View {
                     Text(cliMessage).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 LabeledContent("Settings file") {
-                    Button(configuration.fileURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")) {
-                        NSWorkspace.shared.activateFileViewerSelecting([configuration.fileURL.deletingLastPathComponent()])
+                    Button {
+                        NSWorkspace.shared.activateFileViewerSelecting([configuration.fileURL])
+                    } label: {
+                        Text(configuration.fileURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                     .buttonStyle(.link)
+                    .help("Show in Finder")
                 }
             }
 
@@ -128,6 +149,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .tint(.bouncer)
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
@@ -158,12 +180,15 @@ struct SettingsView: View {
             do {
                 let result = try await service.ruleTest(.init(domain: domain))
                 switch result.decision {
-                case .blocked: testResult = "Blocked by \(result.rule?.pattern ?? "a rule")."
-                case .allowed: testResult = "Allowed by the allow rule \(result.rule?.pattern ?? "")."
-                case .unmatched: testResult = "No rule matches \(result.domain); it resolves normally."
+                case .blocked:
+                    testResult = .init(text: "Blocked by \(result.rule?.pattern ?? "a rule")", symbol: "hand.raised.fill", color: .red)
+                case .allowed:
+                    testResult = .init(text: "Allowed by \(result.rule?.pattern ?? "an allow rule")", symbol: "checkmark.circle.fill", color: .green)
+                case .unmatched:
+                    testResult = .init(text: "No rule matches \(result.domain); it loads normally", symbol: "circle.dashed", color: .secondary)
                 }
             } catch {
-                testResult = MacAutomationErrors.normalize(error).message
+                testResult = .init(text: MacAutomationErrors.normalize(error).message, symbol: "exclamationmark.triangle.fill", color: .orange)
             }
         }
     }

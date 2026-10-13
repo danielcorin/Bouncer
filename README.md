@@ -118,6 +118,8 @@ mise install
 scripts/generate-api.sh      # after editing API/openapi.yaml
 scripts/verify.sh            # the full gate: generation, boundaries, tests, scenarios
 scripts/try-dev.sh           # development-signed build (provisions the tunnel) → /Applications
+BOUNCER_SNAPSHOT_DIR=$(mktemp -d) build/Build/Products/Debug/Bouncer.app/Contents/MacOS/Bouncer
+                             # Debug only: render the menu, Settings, About (light + dark) to PNGs
 swift scripts/generate-app-icon.swift  # re-render the icon (AppIcon.icon glyph + legacy PNGs); colors live at the top
 ```
 

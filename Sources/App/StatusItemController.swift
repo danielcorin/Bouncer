@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController: NSObject {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private let popover = NSPopover()
+    private var panel: MenuBarPanel!
     private let store: BlockingStore
     private let service: BouncerService
     private let configuration: AppConfigurationModel
@@ -23,20 +23,16 @@ final class StatusItemController: NSObject {
         self.configuration = configuration
         super.init()
 
-        popover.behavior = .transient
-        popover.animates = true
-        let hosting = NSHostingController(rootView: MenuView(store: store, service: service, configuration: configuration,
+        panel = MenuBarPanel(content: MenuView(store: store, service: service, configuration: configuration,
             openSettings: { [weak self] in
-                self?.popover.performClose(nil)
+                self?.panel.close()
                 openSettings()
             },
             openAbout: { [weak self] in
-                self?.popover.performClose(nil)
+                self?.panel.close()
                 openAbout()
             },
             quit: { NSApp.terminate(nil) }))
-        hosting.sizingOptions = [.preferredContentSize]
-        popover.contentViewController = hosting
 
         if let button = item.button {
             button.target = self
@@ -68,14 +64,12 @@ final class StatusItemController: NSObject {
             }
             return
         }
-        popover.isShown ? popover.performClose(sender) : showPopover()
+        panel.toggle(below: sender)
     }
 
     func showPopover() {
-        guard let button = item.button else { return }
-        NSApp.activate(ignoringOtherApps: true)
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        guard let button = item.button, !panel.isShown else { return }
+        panel.show(below: button)
     }
 
     /// Brief warning when a hotkey or option-click toggle fails. Successful

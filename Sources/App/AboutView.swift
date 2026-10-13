@@ -96,6 +96,7 @@ struct AboutView: View {
         .padding(.bottom, 22)
         .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
+        .tint(.bouncer)
     }
 
     private func fact(_ symbol: String, _ title: String, _ detail: String) -> some View {
