@@ -1,0 +1,5 @@
+[tools]
+xcodegen = "latest"
+
+[env]
+_.file = { path = ".env", redact = true }

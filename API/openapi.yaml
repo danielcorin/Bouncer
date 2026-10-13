@@ -1,0 +1,1588 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bouncer Automation API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/app/status": {
+      "get": {
+        "operationId": "status",
+        "summary": "Status",
+        "x-cli": {
+          "command": [
+            "status"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/app/show": {
+      "post": {
+        "operationId": "show",
+        "summary": "Show",
+        "x-cli": {
+          "command": [
+            "show"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShowResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/app/quit": {
+      "post": {
+        "operationId": "quit",
+        "summary": "Quit",
+        "x-cli": {
+          "command": [
+            "quit"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuitResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/configuration": {
+      "get": {
+        "operationId": "configList",
+        "summary": "Config list",
+        "x-cli": {
+          "command": [
+            "config",
+            "list"
+          ],
+          "bindings": {
+            "query.all": {
+              "option": "--all"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "all",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "x-capabilities": []
+      }
+    },
+    "/v1/configuration/{key}": {
+      "get": {
+        "operationId": "configGet",
+        "summary": "Config get",
+        "x-cli": {
+          "command": [
+            "config",
+            "get"
+          ],
+          "bindings": {
+            "path.key": {
+              "argument": 0
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigGetResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-capabilities": []
+      },
+      "put": {
+        "operationId": "configSet",
+        "summary": "Config set",
+        "x-cli": {
+          "command": [
+            "config",
+            "set"
+          ],
+          "bindings": {
+            "path.key": {
+              "argument": 0
+            },
+            "body.value": {
+              "option": "--value"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigSetResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigSetBody"
+              }
+            }
+          }
+        },
+        "x-capabilities": []
+      },
+      "delete": {
+        "operationId": "configUnset",
+        "summary": "Config unset",
+        "x-cli": {
+          "command": [
+            "config",
+            "unset"
+          ],
+          "bindings": {
+            "path.key": {
+              "argument": 0
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigUnsetResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-capabilities": []
+      }
+    },
+    "/v1/configuration/reload": {
+      "post": {
+        "operationId": "configReload",
+        "summary": "Config reload",
+        "x-cli": {
+          "command": [
+            "config",
+            "reload"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigReloadResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": []
+      }
+    },
+    "/v1/configuration/validate": {
+      "post": {
+        "operationId": "configValidate",
+        "summary": "Config validate",
+        "x-cli": {
+          "command": [
+            "config",
+            "validate"
+          ],
+          "bindings": {
+            "body.content": {
+              "option": "--content"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigValidateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigValidateBody"
+              }
+            }
+          }
+        },
+        "x-capabilities": []
+      }
+    },
+    "/v1/blocking/on": {
+      "post": {
+        "operationId": "blockingOn",
+        "summary": "Turn blocking on",
+        "x-cli": {
+          "command": [
+            "on"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockingStateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/blocking/off": {
+      "post": {
+        "operationId": "blockingOff",
+        "summary": "Turn blocking off",
+        "x-cli": {
+          "command": [
+            "off"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockingStateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/blocking/toggle": {
+      "post": {
+        "operationId": "blockingToggle",
+        "summary": "Toggle blocking",
+        "x-cli": {
+          "command": [
+            "toggle"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockingStateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/rules": {
+      "get": {
+        "operationId": "ruleList",
+        "summary": "List block and allow rules",
+        "x-cli": {
+          "command": [
+            "rules",
+            "list"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      },
+      "post": {
+        "operationId": "ruleAdd",
+        "summary": "Add a rule",
+        "x-cli": {
+          "command": [
+            "rules",
+            "add"
+          ],
+          "bindings": {
+            "body.pattern": {
+              "argument": 0
+            },
+            "body.kind": {
+              "option": "--kind"
+            },
+            "body.action": {
+              "option": "--action"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleAddBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rules/{id}": {
+      "patch": {
+        "operationId": "ruleUpdate",
+        "summary": "Edit, enable, or disable a rule",
+        "x-cli": {
+          "command": [
+            "rules",
+            "update"
+          ],
+          "bindings": {
+            "path.id": {
+              "argument": 0
+            },
+            "body.pattern": {
+              "option": "--pattern"
+            },
+            "body.kind": {
+              "option": "--kind"
+            },
+            "body.action": {
+              "option": "--action"
+            },
+            "body.enabled": {
+              "option": "--enabled"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Rule ID, unique ID prefix, or exact pattern."
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleUpdateBody"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "ruleRemove",
+        "summary": "Remove a rule",
+        "x-cli": {
+          "command": [
+            "rules",
+            "remove"
+          ],
+          "bindings": {
+            "path.id": {
+              "argument": 0
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Rule ID, unique ID prefix, or exact pattern."
+            }
+          }
+        ]
+      }
+    },
+    "/v1/test": {
+      "get": {
+        "operationId": "ruleTest",
+        "summary": "Show how a domain would be treated",
+        "x-cli": {
+          "command": [
+            "test"
+          ],
+          "bindings": {
+            "query.domain": {
+              "argument": 0
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleTestResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/activity": {
+      "get": {
+        "operationId": "activityList",
+        "summary": "Recently blocked domains",
+        "x-cli": {
+          "command": [
+            "activity"
+          ],
+          "bindings": {
+            "query.limit": {
+              "option": "--limit"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/helper/install": {
+      "post": {
+        "operationId": "helperInstall",
+        "summary": "Install or update the privileged DNS helper (asks for an admin password)",
+        "x-cli": {
+          "command": [
+            "helper",
+            "install"
+          ],
+          "bindings": {}
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockingStateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ]
+      }
+    },
+    "/v1/helper/uninstall": {
+      "post": {
+        "operationId": "helperUninstall",
+        "summary": "Turn blocking off and remove the privileged helper",
+        "x-cli": {
+          "command": [
+            "helper",
+            "uninstall"
+          ],
+          "bindings": {
+            "body.force": {
+              "option": "--force"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockingStateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelperUninstallBody"
+              }
+            }
+          }
+        },
+        "x-destructive": true
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppConfigurationValue": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "AppConfigurationEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/AppConfigurationKey"
+          },
+          "value": {
+            "$ref": "#/components/schemas/AppConfigurationValue"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AppConfigurationSource"
+          },
+          "documentation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "source",
+          "documentation"
+        ]
+      },
+      "AppConfigurationKey": {
+        "type": "string",
+        "enum": [
+          "enable-on-launch",
+          "flash-indicator",
+          "hotkey",
+          "block-bypass-canaries",
+          "upstream-dns"
+        ]
+      },
+      "AppConfigurationSource": {
+        "type": "string",
+        "enum": [
+          "defaults",
+          "user"
+        ]
+      },
+      "ConfigurationReport": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppConfigurationEntry"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "ValidationReport": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "additionalProperties": false
+      },
+      "AppStatus": {
+        "type": "object",
+        "properties": {
+          "appName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "processIdentifier": {
+            "type": "integer"
+          },
+          "isFrontmost": {
+            "type": "boolean"
+          },
+          "blocking": {
+            "$ref": "#/components/schemas/BlockingState"
+          }
+        },
+        "required": [
+          "appName",
+          "version",
+          "processIdentifier",
+          "isFrontmost",
+          "blocking"
+        ]
+      },
+      "StatusResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AppStatus"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ShowResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Message"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "QuitResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Message"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigListResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ConfigurationReport"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigGetResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AppConfigurationEntry"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigSetResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AppConfigurationEntry"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigSetBody": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigUnsetResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AppConfigurationEntry"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigReloadResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ValidationReport"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigValidateResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ValidationReport"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ConfigValidateBody": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "HelperStatus": {
+        "type": "object",
+        "description": "The privileged DNS helper that applies blocks system-wide.",
+        "properties": {
+          "installed": {
+            "type": "boolean"
+          },
+          "upToDate": {
+            "type": "boolean"
+          },
+          "connected": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "installed",
+          "upToDate",
+          "connected"
+        ],
+        "additionalProperties": false
+      },
+      "BlockingState": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether blocking is requested."
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "off",
+              "starting",
+              "on",
+              "stopping",
+              "failed"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "helper": {
+            "$ref": "#/components/schemas/HelperStatus"
+          },
+          "ruleCount": {
+            "type": "integer"
+          },
+          "blockedCount": {
+            "type": "integer",
+            "description": "Blocked lookups since launch."
+          },
+          "hotkey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "phase",
+          "helper",
+          "ruleCount",
+          "blockedCount",
+          "hotkey"
+        ],
+        "additionalProperties": false
+      },
+      "Rule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "domain",
+              "regex"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "block",
+              "allow"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "pattern",
+          "kind",
+          "action",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "RuleList": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Rule"
+            }
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "additionalProperties": false
+      },
+      "RuleTest": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "blocked",
+              "allowed",
+              "unmatched"
+            ]
+          },
+          "rule": {
+            "$ref": "#/components/schemas/Rule"
+          }
+        },
+        "required": [
+          "domain",
+          "decision"
+        ],
+        "additionalProperties": false
+      },
+      "BlockEvent": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "rulePattern": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "description": "ISO 8601 time of the most recent blocked lookup."
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "domain",
+          "rulePattern",
+          "at",
+          "count"
+        ],
+        "additionalProperties": false
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockEvent"
+            }
+          },
+          "blockedCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "events",
+          "blockedCount"
+        ],
+        "additionalProperties": false
+      },
+      "RuleAddBody": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "A domain such as reddit.com, *.reddit.com, a URL, or a regex."
+          },
+          "kind": {
+            "type": "string",
+            "description": "domain (matches the name and its subdomains) or regex (case-insensitive, unanchored). Default: regex when written /like this/, else domain."
+          },
+          "action": {
+            "type": "string",
+            "description": "block (default) or allow. Allow rules override block rules."
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "RuleUpdateBody": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "domain (matches the name and its subdomains) or regex (case-insensitive, unanchored). Default: regex when written /like this/, else domain."
+          },
+          "action": {
+            "type": "string",
+            "description": "block or allow."
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "HelperUninstallBody": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "description": "Confirm removing the privileged helper."
+          }
+        },
+        "required": [
+          "force"
+        ],
+        "additionalProperties": false
+      },
+      "BlockingStateResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BlockingState"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "RuleListResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RuleList"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "RuleResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Rule"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "RuleTestResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RuleTest"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ActivityResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Activity"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

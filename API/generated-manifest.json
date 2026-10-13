@@ -1,0 +1,39 @@
+{
+  "inputs": {
+    "API/generation.json": "d534d8920136a78492499860547b908e30479ee73c6a963b09dd56b2871742a7",
+    "API/openapi.yaml": "4dbbea5a60c2dfbab46de2d3c8d47ecc949c06901b3ef18ddd0d687008741792",
+    "Configuration/Package.resolved": "a1e5bad3f65098185bf6da5f10596b0b8d343483906817479048151fd9c3ce2b",
+    "Packages/AppAutomation/Package.resolved": "b616c49d7edf238de640026f072560ecfc5f6924bfa710cfa736d81f6129e89c",
+    "Packages/AppAutomation/Package.swift": "34ef708ad9c92093e253daf8740bcdd2bb6a1590240432f9c07d007af871debd",
+    "Packages/AppAutomation/Sources/AutomationCLI/CLIEnvironment.swift": "e22ac4f0a94e54148ab90beedeab892d86504b77d8e4d33e5753637f29244a59",
+    "Packages/AppAutomation/Sources/AutomationCLI/Exports.swift": "2525f76450bb4663b37dc1704cb7d77238e2526dd492f84a449430484ca6ffb4",
+    "Packages/AppAutomation/Sources/AutomationRuntime/AppEndpoint.swift": "bd1d1a37d0fd7cc26336220ddf289babc6ba41f385f7e2dee8313a7e9e087e0e",
+    "Packages/AppAutomation/Sources/AutomationRuntime/AutomationHost.swift": "6b51a9584cfedac94ca8b3478a3d4eb2edfe5be9fff363ee37ce02970d9f46f4",
+    "Packages/AppAutomation/Sources/AutomationRuntime/BlockingIO.swift": "85b450d73ef70bc779a2d91953865d3f0ca7ec9a0385722f6b8509d3b3c22b30",
+    "Packages/AppAutomation/Sources/AutomationRuntime/Contract.swift": "50960e4c1ee980ec17a90e3eb1ff93581424cce76ce2b2f63b128a7ce5ba1b37",
+    "Packages/AppAutomation/Sources/AutomationRuntime/Credentials.swift": "d55e58ab524472b55be406a838d4d070506d2d79e4d50e389136582459879353",
+    "Packages/AppAutomation/Sources/AutomationRuntime/Protocol.swift": "b64433aa7d9c88447adf25e4f046bef33d652cf117820c8bbd7985d639625fa9",
+    "Packages/AppAutomation/Sources/AutomationRuntime/SocketTransport.swift": "708563b1b545bd6d7d1a8175875298fb2ca085b849230707e5478c669cecffcb",
+    "Packages/AppAutomation/Sources/AutomationRuntime/TransferStore.swift": "7f26848e6839d94822c6b2941f90b369194f6fe577d593d13525100e8409c0d3",
+    "Packages/AppAutomation/Sources/AutomationRuntime/Version.swift": "284dcea1ab4e418f4ebc4bfedfd4528453e66790df1387c41249a801bc03d72c",
+    "Packages/AppAutomation/Sources/InterfaceGenerator/main.swift": "93ea0bf34d9a0c3fa12a8fe5664475a508ffdba3df79c2ca0afbe9e5810413ed",
+    "scripts/check-dependencies.py": "93ba8defb7fb2544cbf2cb05ad802349ad5b864ff5d4e48aaa0e4d6d5da38d11",
+    "scripts/check-generated.sh": "168d0e53cd3d9f29075b2b1cf6a4c64d82c9aae94a55d0831cb5419675e4810b",
+    "scripts/generate-api.sh": "f1aceee6b66f9ced36ddc3107c03c971394fbb59f2c94b779fef02b3e0428e91",
+    "scripts/generated-files.py": "7e717220df52907c0c35c1ce14ff1771cd9d6aaf7c9e79300d578ca8a77ff028",
+    "scripts/prepare-xcode.sh": "fd7b4ecf81170352c383d9aa42b374561364be1da40794edd7561df499fb27ce"
+  },
+  "outputs": {
+    "Sources/CLI/Generated/Commands.swift": "6402d4faf6830e2572a4d6ec52f06a6f4c7ccf73a32a0077372b476bf2561c81",
+    "Sources/Shared/API/Generated/AutomationCatalog.swift": "a3d2b96d2bc7bcea98a89178f0dce946c2533f585e6e1a1e54de77f771d925b2",
+    "Sources/Shared/API/Generated/AutomationOperations.swift": "874bdd10fc4d18388cd65caf2db26568a3b6c79d8ba725165d595085e6c6dcdd",
+    "Sources/Shared/API/Generated/Types+Components+Headers.swift": "b98a3f97c4cb97176fe979d198d2a3705972f99e4346887f0af4a266c6de8365",
+    "Sources/Shared/API/Generated/Types+Components+Parameters.swift": "d595dcdbd4f83d327e4c2ac0afd0c24e1f480a8a51080b3317e3705ecfc805d4",
+    "Sources/Shared/API/Generated/Types+Components+RequestBodies.swift": "00a9569f70ba89057fd5fd14b4ecbbad8a34d6941e8bb905c57dc198873116d5",
+    "Sources/Shared/API/Generated/Types+Components+Responses.swift": "9398591b37a3141b09b726fcf5612eabf46e641bb56e0da6d7f0a098d307b348",
+    "Sources/Shared/API/Generated/Types+Components+Schemas.swift": "622f41d5b48384a50a1ec6a833acc6c140297075f54b1ec78fc0ef6036e29d3b",
+    "Sources/Shared/API/Generated/Types+Components.swift": "a823627f9eccdb71d20853743709c54609c76fe51096cd751aa2493f3f828a38",
+    "Sources/Shared/API/Generated/Types+Operations.swift": "11e2c0d38825939040ac0a5a32365744d4fc38f73bce28d8ba502442e00689b0",
+    "Sources/Shared/API/Generated/Types.swift": "2af7a53f5746db84ca8ee6470c02649ed81cc58ed8bcfd4e58dfc885771485e7"
+  }
+}
