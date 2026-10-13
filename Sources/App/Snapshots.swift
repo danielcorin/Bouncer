@@ -43,6 +43,9 @@ enum SnapshotRenderer {
         _ = try? await service.blockingOn(.init())
         await render(menu(), "menu-failed", into: directory)
         await render(SettingsView(store: store, service: service, configuration: configuration, openAbout: {}), "settings", into: directory)
+        // As the window shows it on a short screen: the form scrolls.
+        await render(SettingsView(store: store, service: service, configuration: configuration, openAbout: {}), "settings-short",
+                     into: directory, size: CGSize(width: SettingsWindowController.width, height: 600))
         await render(AboutView(configuration: configuration, openSettings: {}), "about", into: directory)
         await render(StatsView(stats: store.stats, service: service), "stats", into: directory)
     }
@@ -67,7 +70,7 @@ enum SnapshotRenderer {
         if let data = try? JSONSerialization.data(withJSONObject: ["version": 1, "days": days]) { try? data.write(to: url) }
     }
 
-    private static func render(_ view: some View, _ name: String, into directory: URL) async {
+    private static func render(_ view: some View, _ name: String, into directory: URL, size fixedSize: CGSize? = nil) async {
         for (suffix, appearance, scheme) in [("light", NSAppearance.Name.aqua, ColorScheme.light), ("dark", .darkAqua, .dark)] {
             let host = NSHostingView(rootView: view
                 .background(Color(nsColor: .windowBackgroundColor))
@@ -80,7 +83,7 @@ enum SnapshotRenderer {
             window.backgroundColor = .windowBackgroundColor
             window.contentView = host
             host.layoutSubtreeIfNeeded()
-            var size = host.fittingSize
+            var size = fixedSize ?? host.fittingSize
             // Views built on GeometryReader (charts) can report no natural height.
             if size.width < 1 || size.height < 1 { size = CGSize(width: max(size.width, 560), height: 720) }
             FileHandle.standardError.write(Data("snapshot \(name)-\(suffix): \(size)\n".utf8))

@@ -6,17 +6,36 @@ import SwiftUI
 final class SettingsWindowController {
     private let window: NSWindow
 
+    static let width: CGFloat = 520
+    static let preferredHeight: CGFloat = 680
+
     init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel, openAbout: @escaping () -> Void) {
-        window = NSWindow(contentViewController: NSHostingController(rootView:
-            SettingsView(store: store, service: service, configuration: configuration, openAbout: openAbout)))
+        let hosting = NSHostingController(rootView:
+            SettingsView(store: store, service: service, configuration: configuration, openAbout: openAbout))
+        // The window, not the content's full height, decides the size; the form scrolls.
+        hosting.sizingOptions = []
+        window = NSWindow(contentViewController: hosting)
         window.title = "Bouncer Settings"
-        window.styleMask = [.titled, .closable]
+        window.styleMask = [.titled, .closable, .resizable]
+        window.contentMinSize = NSSize(width: Self.width, height: 360)
+        window.contentMaxSize = NSSize(width: Self.width, height: .greatestFiniteMagnitude)
         window.isReleasedWhenClosed = false
+        window.setContentSize(NSSize(width: Self.width, height: Self.fittingHeight(on: NSScreen.main)))
+    }
+
+    /// Tall enough for most sections, but never taller than the screen.
+    static func fittingHeight(on screen: NSScreen?) -> CGFloat {
+        let available = (screen?.visibleFrame.height ?? preferredHeight + 100) - 80
+        return max(360, min(preferredHeight, available))
     }
 
     func present() {
         NSApp.activate(ignoringOtherApps: true)
-        window.center()
+        if !window.isVisible {
+            let height = Self.fittingHeight(on: window.screen ?? NSScreen.main)
+            if window.frame.height > height + 40 { window.setContentSize(NSSize(width: Self.width, height: height)) }
+            window.center()
+        }
         window.makeKeyAndOrderFront(nil)
     }
 }
@@ -171,8 +190,8 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .tint(.bouncer)
-        .frame(width: 520)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: SettingsWindowController.width, maxWidth: SettingsWindowController.width,
+               minHeight: 360, maxHeight: .infinity)
         .onAppear {
             upstream = config.upstreamDNS.joined(separator: ", ")
             store.refreshTunnel()
