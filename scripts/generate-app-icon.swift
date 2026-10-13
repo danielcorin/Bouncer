@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 // Bouncer's app icon: a white shield with a "no entry" bar cut through it, on a
-// deep violet gradient (velvet rope, not alarm red). Generated from the app-icon
+// deep teal gradient (calm protection rather than alarm red). Generated from the app-icon
 // skill template. Run from the repo root:
 //   swift scripts/generate-app-icon.swift
 //
@@ -30,8 +30,8 @@ struct RGB {
     func cg(_ a: CGFloat = 1) -> CGColor { CGColor(srgbRed: r, green: g, blue: b, alpha: a) }
 }
 
-let gradientTop = RGB(0x8C6CFF)
-let gradientBottom = RGB(0x3B1FA8)
+let gradientTop = RGB(0x2EC4B6)
+let gradientBottom = RGB(0x0A6F73)
 let glyphWhite = RGB(0xFFFFFF)
 
 // Glyph geometry in unit coordinates with y pointing DOWN (SVG convention),

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Sources/App/Assets.xcassets/AppIcon.appiconset/icon_256.png" width="128" alt="Bouncer app icon: a white shield with a no-entry bar on deep teal">
+</p>
+
 # Bouncer
 
 A menu bar app that blocks domains system-wide (every browser and app), with
@@ -114,7 +118,7 @@ mise install
 scripts/generate-api.sh      # after editing API/openapi.yaml
 scripts/verify.sh            # the full gate: generation, boundaries, tests, scenarios
 scripts/try-dev.sh           # development-signed build (provisions the tunnel) → /Applications
-swift scripts/generate-app-icon.swift  # re-render the icon (AppIcon.icon glyph + legacy PNGs)
+swift scripts/generate-app-icon.swift  # re-render the icon (AppIcon.icon glyph + legacy PNGs); colors live at the top
 ```
 
 `project.yml` is the Xcode source of truth; set `DEVELOPMENT_TEAM` in the ignored
