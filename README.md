@@ -98,8 +98,8 @@ every app's DNS. So Bouncer filters DNS inside a Network Extension:
   connections don't do new DNS lookups. Reload, or restart the browser.
 - macOS runs one VPN at a time. Starting another VPN disconnects Bouncer's tunnel;
   Bouncer then reports that blocking stopped rather than fighting it.
-- Safari with iCloud Private Relay carries page loads inside the relay; whether the
-  tunnel's DNS still applies there hasn't been verified yet.
+- Verified with iCloud Private Relay on (2026-10-13): Safari, Helium (Chromium),
+  curl, and the system resolver all resolve through the tunnel and are blocked.
 - Browsers with a hard-coded DNS-over-HTTPS provider (Chrome/Edge "Secure DNS" set
   to a specific provider, Firefox "Max Protection") bypass system DNS.
 - The tunnel is a development-signed app extension (personal use). Distributing
