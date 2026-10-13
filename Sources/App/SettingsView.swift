@@ -39,6 +39,8 @@ struct SettingsView: View {
     @State private var tunnelMessage: String?
     @State private var cliMessage: String?
     @State private var confirmUninstall = false
+    @State private var restartingBrowser = false
+    @State private var restartMessage: String?
 
     private var config: AppConfiguration { configuration.configuration }
 
@@ -63,6 +65,16 @@ struct SettingsView: View {
                 } label: {
                     Text("Restart \(browserName) after adding blocks")
                     Text("Browsers keep using connections they already have open, so a site you just blocked can stay loaded until the browser restarts.")
+                }
+                LabeledContent("Restart \(browserName) now") {
+                    HStack(spacing: 8) {
+                        if restartingBrowser { ProgressView().controlSize(.small) }
+                        Button("Restart Now", action: restartBrowser)
+                            .disabled(restartingBrowser || WorkspaceBrowserController().defaultBrowser() == nil)
+                    }
+                }
+                if let restartMessage {
+                    Text(restartMessage).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 Toggle(isOn: binding(.blockBypassCanaries, \.blockBypassCanaries)) {
                     Text("Prevent DNS bypass while blocking")
@@ -200,6 +212,19 @@ struct SettingsView: View {
                 }
             } catch {
                 testResult = .init(text: MacAutomationErrors.normalize(error).message, symbol: "exclamationmark.triangle.fill", color: .orange)
+            }
+        }
+    }
+
+    private func restartBrowser() {
+        restartingBrowser = true
+        restartMessage = nil
+        Task { @MainActor in
+            defer { restartingBrowser = false }
+            do {
+                restartMessage = try await service.browserRestart(.init(force: true)).message
+            } catch {
+                restartMessage = MacAutomationErrors.normalize(error).message
             }
         }
     }

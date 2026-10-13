@@ -15,6 +15,10 @@ struct MenuView: View {
     @State private var editing: UUID?
     @State private var editText = ""
     @State private var hovered: UUID?
+    @State private var info: String?
+    @State private var restartingBrowser = false
+    /// Read on each render so it follows changes to the default browser.
+    private var defaultBrowser: BrowserInfo? { WorkspaceBrowserController().defaultBrowser() }
 
     private var busy: Bool { store.phase == .starting || store.phase == .stopping }
 
@@ -117,6 +121,7 @@ struct MenuView: View {
 
     private var notice: Notice? {
         if let error { return Notice(text: error, isError: true) }
+        if let info { return Notice(text: info, isError: false) }
         guard let message = store.message else { return nil }
         return Notice(text: message, isError: store.phase == .failed)
     }
@@ -311,9 +316,25 @@ struct MenuView: View {
         HStack(spacing: 2) {
             Button(action: openSettings) { Label("Settings…", systemImage: "gearshape") }
                 .buttonStyle(FooterButtonStyle())
-            Button(action: openAbout) { Label("About", systemImage: "info.circle") }
+            Button(action: openAbout) { Image(systemName: "info.circle") }
                 .buttonStyle(FooterButtonStyle())
-            Spacer()
+                .help("About Bouncer")
+            if let browser = defaultBrowser {
+                Button(action: restartBrowser) {
+                    HStack(spacing: 5) {
+                        if restartingBrowser {
+                            ProgressView().controlSize(.mini)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        Text("Restart \(browser.name)").lineLimit(1)
+                    }
+                }
+                .buttonStyle(FooterButtonStyle())
+                .disabled(restartingBrowser)
+                .help("Quit and reopen \(browser.name) so it drops connections to sites you just blocked\(browser.restoresTabs == true ? "; its windows and tabs reopen" : "")")
+            }
+            Spacer(minLength: 4)
             Button(action: quit) {
                 HStack(spacing: 4) {
                     Text("Quit")
@@ -331,6 +352,19 @@ struct MenuView: View {
     private func setEnabled(_ enabled: Bool) {
         run {
             if enabled { _ = try await service.blockingOn(.init()) } else { _ = try await service.blockingOff(.init()) }
+        }
+    }
+
+    private func restartBrowser() {
+        restartingBrowser = true
+        run {
+            defer { restartingBrowser = false }
+            let result = try await service.browserRestart(.init(force: true))
+            if !result.restarted {
+                info = result.message
+                try? await Task.sleep(for: .seconds(4))
+                if info == result.message { info = nil }
+            }
         }
     }
 

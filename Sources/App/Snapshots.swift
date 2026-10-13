@@ -84,7 +84,10 @@ private final class SnapshotShell: AppShell {
 
 @MainActor
 private final class SnapshotBrowser: BrowserControlling {
-    func defaultBrowser() -> BrowserInfo? { nil }
+    func defaultBrowser() -> BrowserInfo? {
+        BrowserInfo(name: "Helium", bundleIdentifier: "net.imput.helium", appURL: URL(fileURLWithPath: "/Applications/Helium.app"),
+                    engine: .chromium, isRunning: true)
+    }
     func restart(_ browser: BrowserInfo) async throws {}
 }
 
