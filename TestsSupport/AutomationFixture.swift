@@ -14,7 +14,7 @@ struct AutomationFixture {
         let config = ConfigurationOperationService(store: AppConfigurationStore(fileURL: root.appendingPathComponent("config/bouncer/config.toml")))
         let backend = InMemoryFilterBackend(probes: fixtureProbeDomains)
         let store = BlockingStore(rulesURL: root.appendingPathComponent("rules.json"), backend: backend)
-        let application = BouncerService(store: store, shell: FixtureShell())
+        let application = BouncerService(store: store, shell: FixtureShell(), browser: FakeBrowserController())
         let transfers = TransferStore(directory: root.appendingPathComponent("Transfers"))
         let suite = CommandLine.arguments.last == "--scenarios" ? try appScenarios(application: application, configuration: config, transfers: transfers) : nil
         let host = AutomationHost(version: "fixture", operations: GeneratedCatalog.operations.map(\.id),                                   normalize: { MacAutomationErrors.normalize($0) }) { request in
@@ -44,4 +44,6 @@ private final class FixtureShell: AppShell {
     func quit() throws -> String {
         throw AutomationFailure("capability_unavailable", "App termination requires the signed app.")
     }
+    /// The fixture never prompts; "Not now" keeps scenarios deterministic.
+    func confirmBrowserRestart(_ browser: BrowserInfo) async -> Bool { false }
 }

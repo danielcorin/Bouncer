@@ -7,6 +7,8 @@ import Combine
 @MainActor
 final class AppKitShell: AppShell {
     var onShow: (() -> Void)?
+    /// Persists "Remember my choice" from the restart prompt.
+    var onRememberRestartChoice: ((RestartBrowserMode) -> Void)?
     let appName = "Bouncer"
     var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown" }
     var isFrontmost: Bool { NSApp.isActive }
@@ -14,6 +16,26 @@ final class AppKitShell: AppShell {
     func show() throws -> String {
         onShow?()
         return "Bouncer's menu is open."
+    }
+
+    func confirmBrowserRestart(_ browser: BrowserInfo) async -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "Restart \(browser.name) so the block takes effect?"
+        let tabs = browser.restoresTabs == true
+            ? "Its windows and tabs will reopen, but text you've typed and not submitted will be lost."
+            : "Whether its windows reopen depends on \(browser.name)'s settings, and text you've typed and not submitted will be lost."
+        alert.informativeText = "\(browser.name) keeps using connections it already has open, so a site you just blocked can stay loaded until it restarts. \(tabs)"
+        alert.icon = NSWorkspace.shared.icon(forFile: browser.appURL.path)
+        alert.addButton(withTitle: "Restart \(browser.name)")
+        alert.addButton(withTitle: "Not Now")
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Remember my choice"
+        NSApp.activate(ignoringOtherApps: true)
+        let restart = alert.runModal() == .alertFirstButtonReturn
+        if alert.suppressionButton?.state == .on {
+            onRememberRestartChoice?(restart ? .always : .off)
+        }
+        return restart
     }
 
     func quit() throws -> String {
@@ -53,7 +75,7 @@ final class AppRuntime {
     private init() {
         let initial = configurationModel.configuration
         store = BlockingStore(backend: TunnelFilterBackend(), options: initial.filterOptions)
-        service = BouncerService(store: store, shell: shell, configuration: initial)
+        service = BouncerService(store: store, shell: shell, browser: WorkspaceBrowserController(), configuration: initial)
     }
 
     func start() {
@@ -63,6 +85,9 @@ final class AppRuntime {
                                               openAbout: { [weak self] in self?.showAbout() })
         self.statusItem = statusItem
         shell.onShow = { [weak statusItem] in statusItem?.showPopover() }
+        shell.onRememberRestartChoice = { [weak self] mode in
+            self?.configurationModel.set(.restartBrowser, value: mode.rawValue)
+        }
 
         hotkeys.onPress = { [weak self] in self?.toggleFromHotkey() }
         configurationModel.$configuration

@@ -18,7 +18,7 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
 
         // Configuration
         .init(APIOperations.ConfigList.self, input: { .init(all: true) }) { value in
-            try require(value["entries"].elements.count == 5, "All configuration keys")
+            try require(value["entries"].elements.count == 6, "All configuration keys")
         },
         .init(APIOperations.ConfigSet.self, input: { .init(key: "flash-indicator", value: "false") }) { value in
             try require(value["value"] == .bool(false), "Set preference")
@@ -43,6 +43,16 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
         },
         .init(APIOperations.ConfigUnset.self, input: { .init(key: "hotkey") }) { value in
             try require(value["value"] == .string("ctrl+option+cmd+b"), "Restore hotkey default")
+        },
+        .init(APIOperations.ConfigGet.self, input: { .init(key: "restart-browser") }) { value in
+            try require(value["value"] == .string("ask") && value["source"] == .string("defaults"), "Restart prompt is the default")
+        },
+        .init(APIOperations.ConfigSet.self, input: { .init(key: "restart-browser", value: "Always") }) { value in
+            try require(value["value"] == .string("always"), "Restart mode is stored lowercase")
+        },
+        .init(APIOperations.ConfigSet.self, error: "invalid_input", input: { .init(key: "restart-browser", value: "sometimes") }) { _ in },
+        .init(APIOperations.ConfigUnset.self, input: { .init(key: "restart-browser") }) { value in
+            try require(value["value"] == .string("ask"), "Restore restart default")
         },
 
         // Rules
@@ -111,6 +121,11 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
         .init(APIOperations.TunnelRemove.self, error: "force_required", input: { .init(force: false) }) { _ in },
         .init(APIOperations.TunnelRemove.self, input: { .init(force: true) }) { value in
             try require(value["tunnel"]["installed"] == .bool(false) && value["enabled"] == .bool(false), "Tunnel configuration removed")
+        },
+        .init(APIOperations.BrowserRestart.self, error: "force_required", input: { .init(force: false) }) { _ in },
+        .init(APIOperations.BrowserRestart.self, input: { .init(force: true) }) { value in
+            try require(value["restarted"] == .bool(true) && value["browser"] == .string("Fixture Browser"), "Default browser restarted")
+            try require(value["restoresTabs"] == .bool(true), "Chromium browsers come back with their tabs")
         },
         .init(APIOperations.RuleRemove.self, input: { .init(id: "example.com") }) { value in
             try require(value["pattern"] == .string("example.com"), "Removed rule is returned")

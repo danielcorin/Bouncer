@@ -46,6 +46,18 @@ enum GeneratedCLI {
             try await CLIEnvironment.current.run(APIOperations.BlockingToggle.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
         }
     }
+    struct BrowserRestart: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(commandName: "restart", abstract: "Quit and relaunch the default browser so it drops connections to newly blocked sites")
+        @Flag(name: .customLong("force"), help: "Confirm this destructive operation.") var value_force = false
+        @Flag(help: "Emit a structured JSON result.") var json = false
+        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
+        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
+        mutating func run() async throws {
+            var values: [String: String] = [:]
+            if value_force { values["force"] = "true" }
+            try await CLIEnvironment.current.run(APIOperations.BrowserRestart.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
+        }
+    }
     struct ConfigGet: AsyncParsableCommand {
         static let configuration = CommandConfiguration(commandName: "get", abstract: "Config get")
         @Argument(help: "key (string)") var argument0: String?
@@ -240,6 +252,11 @@ enum GeneratedCLI {
             try await CLIEnvironment.current.run(APIOperations.TunnelRemove.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
         }
     }
+    struct BrowserGroup: AsyncParsableCommand {
+        static var configuration: CommandConfiguration { .init(commandName: "browser", subcommands: [
+            CLIEnvironment.current.command(APIOperations.BrowserRestart.self, default: BrowserRestart.self)
+        ]) }
+    }
     struct ConfigGroup: AsyncParsableCommand {
         static var configuration: CommandConfiguration { .init(commandName: "config", subcommands: [
             CLIEnvironment.current.command(APIOperations.ConfigGet.self, default: ConfigGet.self),
@@ -273,6 +290,7 @@ enum GeneratedCLI {
         CLIEnvironment.current.command(APIOperations.RuleTest.self, default: RuleTest.self),
         CLIEnvironment.current.command(APIOperations.Show.self, default: Show.self),
         CLIEnvironment.current.command(APIOperations.Status.self, default: Status.self),
+        BrowserGroup.self,
         ConfigGroup.self,
         RulesGroup.self,
         TunnelGroup.self

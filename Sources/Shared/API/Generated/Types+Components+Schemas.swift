@@ -243,6 +243,7 @@ extension Components {
             case hotkey = "hotkey"
             case block_hyphen_bypass_hyphen_canaries = "block-bypass-canaries"
             case upstream_hyphen_dns = "upstream-dns"
+            case restart_hyphen_browser = "restart-browser"
         }
         /// - Remark: Generated from `#/components/schemas/AppConfigurationSource`.
         @frozen public enum AppConfigurationSource: String, Codable, Hashable, Sendable, CaseIterable {
@@ -1487,6 +1488,135 @@ extension Components {
             ///
             /// - Parameters:
             ///   - force: Confirm removing the VPN configuration.
+            public init(force: Swift.Bool) {
+                self.force = force
+            }
+            public enum CodingKeys: String, CodingKey {
+                case force
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.force = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .force
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "force"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BrowserRestart`.
+        public struct BrowserRestart: Codable, Hashable, Sendable {
+            /// The default browser's name, if one was found.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BrowserRestart/browser`.
+            public var browser: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/BrowserRestart/restarted`.
+            public var restarted: Swift.Bool
+            /// Whether the browser is relaunched in a way that reopens its windows and tabs. Absent when it depends on the browser's own settings.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BrowserRestart/restoresTabs`.
+            public var restoresTabs: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/BrowserRestart/message`.
+            public var message: Swift.String
+            /// Creates a new `BrowserRestart`.
+            ///
+            /// - Parameters:
+            ///   - browser: The default browser's name, if one was found.
+            ///   - restarted:
+            ///   - restoresTabs: Whether the browser is relaunched in a way that reopens its windows and tabs. Absent when it depends on the browser's own settings.
+            ///   - message:
+            public init(
+                browser: Swift.String? = nil,
+                restarted: Swift.Bool,
+                restoresTabs: Swift.Bool? = nil,
+                message: Swift.String
+            ) {
+                self.browser = browser
+                self.restarted = restarted
+                self.restoresTabs = restoresTabs
+                self.message = message
+            }
+            public enum CodingKeys: String, CodingKey {
+                case browser
+                case restarted
+                case restoresTabs
+                case message
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.browser = try container.decodeIfPresent(
+                    Swift.String.self,
+                    forKey: .browser
+                )
+                self.restarted = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .restarted
+                )
+                self.restoresTabs = try container.decodeIfPresent(
+                    Swift.Bool.self,
+                    forKey: .restoresTabs
+                )
+                self.message = try container.decode(
+                    Swift.String.self,
+                    forKey: .message
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "browser",
+                    "restarted",
+                    "restoresTabs",
+                    "message"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BrowserRestartResult`.
+        public struct BrowserRestartResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BrowserRestartResult/requestId`.
+            public var requestId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/BrowserRestartResult/data`.
+            public var data: Components.Schemas.BrowserRestart
+            /// Creates a new `BrowserRestartResult`.
+            ///
+            /// - Parameters:
+            ///   - requestId:
+            ///   - data:
+            public init(
+                requestId: Swift.String,
+                data: Components.Schemas.BrowserRestart
+            ) {
+                self.requestId = requestId
+                self.data = data
+            }
+            public enum CodingKeys: String, CodingKey {
+                case requestId
+                case data
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.requestId = try container.decode(
+                    Swift.String.self,
+                    forKey: .requestId
+                )
+                self.data = try container.decode(
+                    Components.Schemas.BrowserRestart.self,
+                    forKey: .data
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "requestId",
+                    "data"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BrowserRestartBody`.
+        public struct BrowserRestartBody: Codable, Hashable, Sendable {
+            /// Confirm quitting and relaunching the default browser; unsubmitted form text is lost.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BrowserRestartBody/force`.
+            public var force: Swift.Bool
+            /// Creates a new `BrowserRestartBody`.
+            ///
+            /// - Parameters:
+            ///   - force: Confirm quitting and relaunching the default browser; unsubmitted form text is lost.
             public init(force: Swift.Bool) {
                 self.force = force
             }

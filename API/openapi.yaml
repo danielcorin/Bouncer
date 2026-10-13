@@ -934,6 +934,59 @@
         },
         "x-destructive": true
       }
+    },
+    "/v1/browser/restart": {
+      "post": {
+        "operationId": "browserRestart",
+        "summary": "Quit and relaunch the default browser so it drops connections to newly blocked sites",
+        "x-cli": {
+          "command": [
+            "browser",
+            "restart"
+          ],
+          "bindings": {
+            "body.force": {
+              "option": "--force"
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowserRestartBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrowserRestartResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Operation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "x-capabilities": [
+          "running-app"
+        ],
+        "x-destructive": true
+      }
     }
   },
   "components": {
@@ -1030,7 +1083,8 @@
           "flash-indicator",
           "hotkey",
           "block-bypass-canaries",
-          "upstream-dns"
+          "upstream-dns",
+          "restart-browser"
         ]
       },
       "AppConfigurationSource": {
@@ -1578,6 +1632,59 @@
           "force": {
             "type": "boolean",
             "description": "Confirm removing the VPN configuration."
+          }
+        },
+        "required": [
+          "force"
+        ],
+        "additionalProperties": false
+      },
+      "BrowserRestart": {
+        "type": "object",
+        "properties": {
+          "browser": {
+            "type": "string",
+            "description": "The default browser's name, if one was found."
+          },
+          "restarted": {
+            "type": "boolean"
+          },
+          "restoresTabs": {
+            "type": "boolean",
+            "description": "Whether the browser is relaunched in a way that reopens its windows and tabs. Absent when it depends on the browser's own settings."
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "restarted",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "BrowserRestartResult": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BrowserRestart"
+          }
+        },
+        "required": [
+          "requestId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "BrowserRestartBody": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "description": "Confirm quitting and relaunching the default browser; unsubmitted form text is lost."
           }
         },
         "required": [

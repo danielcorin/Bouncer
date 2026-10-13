@@ -190,6 +190,7 @@ targets:
       - Tests
       - TestsSupport/ScenarioSuite.swift
       - TestsSupport/InMemoryFilterBackend.swift
+      - TestsSupport/FakeBrowserController.swift
     dependencies:
       - target: BouncerCore
       - package: AppAutomation

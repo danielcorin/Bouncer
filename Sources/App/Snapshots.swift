@@ -15,7 +15,7 @@ enum SnapshotRenderer {
         let backend = SnapshotBackend()
         let store = BlockingStore(rulesURL: scratch.appendingPathComponent("rules.json"), backend: backend)
         let configuration = AppConfigurationModel(store: AppConfigurationStore(fileURL: scratch.appendingPathComponent("config.toml")))
-        let service = BouncerService(store: store, shell: SnapshotShell())
+        let service = BouncerService(store: store, shell: SnapshotShell(), browser: SnapshotBrowser())
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         func menu() -> some View {
@@ -79,6 +79,13 @@ private final class SnapshotShell: AppShell {
     let isFrontmost = false
     func show() throws -> String { "" }
     func quit() throws -> String { "" }
+    func confirmBrowserRestart(_ browser: BrowserInfo) async -> Bool { false }
+}
+
+@MainActor
+private final class SnapshotBrowser: BrowserControlling {
+    func defaultBrowser() -> BrowserInfo? { nil }
+    func restart(_ browser: BrowserInfo) async throws {}
 }
 
 /// In-memory tunnel that "sees" a few blocked lookups when it starts.

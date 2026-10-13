@@ -94,6 +94,7 @@ bouncer rules update old.reddit.com --enabled false   # ID, ID prefix, or exact 
 bouncer rules remove 71BE9CD1
 bouncer test www.reddit.com          # which rule (if any) applies
 bouncer activity --limit 10          # recently blocked domains
+bouncer browser restart --force      # quit and relaunch the default browser (tabs restored for Chromium)
 bouncer tunnel install | tunnel remove --force
 bouncer config list --all true       # settings live in ~/.config/bouncer/config.toml
 bouncer quit                         # removes blocks
@@ -112,6 +113,7 @@ Every command accepts `--json`. Results go to stdout, errors to stderr as
 | `flash-indicator` | `true` | Flash the menu bar on each block |
 | `block-bypass-canaries` | `true` | While blocking, tell Firefox's DNS-over-HTTPS to use system DNS |
 | `upstream-dns` | *(empty)* | Comma-separated resolvers; empty follows the network's DHCP/RA servers |
+| `restart-browser` | `ask` | After blocking turns on or a block rule is added, restart the default browser: `ask`, `always`, or `off` |
 
 ## How it works
 
@@ -139,8 +141,12 @@ every app's DNS. So Bouncer filters DNS inside a Network Extension:
 
 ### Limits
 
-- Sites already open may keep working until the browser reconnects: existing
-  connections don't do new DNS lookups. Reload, or restart the browser.
+- Browsers keep using connections they already have open (especially HTTP/3), so a
+  site you just blocked can keep loading without a new DNS lookup. When blocking
+  turns on or you add a block rule, Bouncer asks to restart your default browser
+  (`restart-browser`). Chromium browsers relaunch with their windows and tabs;
+  Safari and Firefox reopen them according to their own settings. Other browsers
+  and apps need a manual restart.
 - macOS runs one VPN at a time. Starting another VPN disconnects Bouncer's tunnel;
   Bouncer then reports that blocking stopped rather than fighting it.
 - Tested with iCloud Private Relay on: Safari, a Chromium-based browser, curl, and

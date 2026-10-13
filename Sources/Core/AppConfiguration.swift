@@ -3,6 +3,13 @@ import Darwin
 import Network
 import TOML
 
+/// What to do with the default browser after blocking tightens (blocking turns
+/// on, or a block rule is added or re-enabled). Browsers reuse open connections,
+/// so a restart is what makes new blocks apply to sites that are already open.
+public enum RestartBrowserMode: String, CaseIterable, Codable, Sendable {
+    case ask, always, off
+}
+
 public struct AppConfiguration: Equatable, Sendable {
     public static let defaults = AppConfiguration()
     public var enableOnLaunch: Bool
@@ -11,14 +18,16 @@ public struct AppConfiguration: Equatable, Sendable {
     public var hotkey: String
     public var blockBypassCanaries: Bool
     public var upstreamDNS: [String]
+    public var restartBrowser: RestartBrowserMode
 
     public init(enableOnLaunch: Bool = false, flashIndicator: Bool = true, hotkey: String = "ctrl+option+cmd+b",
-                blockBypassCanaries: Bool = true, upstreamDNS: [String] = []) {
+                blockBypassCanaries: Bool = true, upstreamDNS: [String] = [], restartBrowser: RestartBrowserMode = .ask) {
         self.enableOnLaunch = enableOnLaunch
         self.flashIndicator = flashIndicator
         self.hotkey = hotkey
         self.blockBypassCanaries = blockBypassCanaries
         self.upstreamDNS = upstreamDNS
+        self.restartBrowser = restartBrowser
     }
 
     public var filterOptions: FilterOptions {
@@ -31,10 +40,11 @@ public enum AppConfigurationKey: String, CaseIterable, Codable, Sendable {
     case hotkey = "hotkey"
     case blockBypassCanaries = "block-bypass-canaries"
     case upstreamDNS = "upstream-dns"
+    case restartBrowser = "restart-browser"
     public var valueType: String {
         switch self {
         case .enableOnLaunch, .flashIndicator, .blockBypassCanaries: "boolean"
-        case .hotkey, .upstreamDNS: "string"
+        case .hotkey, .upstreamDNS, .restartBrowser: "string"
         }
     }
     public var documentation: String {
@@ -44,6 +54,7 @@ public enum AppConfigurationKey: String, CaseIterable, Codable, Sendable {
         case .hotkey: "Global shortcut that toggles blocking, e.g. ctrl+option+cmd+b. Use modifiers ctrl, option, shift, cmd. Empty disables it."
         case .blockBypassCanaries: "While blocking, answer NXDOMAIN for Firefox's DNS-over-HTTPS canary domain so Firefox falls back to system DNS."
         case .upstreamDNS: "Comma-separated resolver IPs to forward allowed lookups to. Empty follows the network's DHCP servers."
+        case .restartBrowser: "After blocking turns on or a block rule is added, restart the default browser so it drops connections to newly blocked sites: ask, always, or off."
         }
     }
 }
@@ -104,6 +115,8 @@ public struct AppConfigurationStore: Sendable, AppConfigurationStoreReadAccess {
             case (.enableOnLaunch, .boolean), (.flashIndicator, .boolean), (.blockBypassCanaries, .boolean): break
             case (.hotkey, .string(let text)):
                 guard text.isEmpty || HotkeyChord(text) != nil else { throw error("Invalid hotkey '\(text)'. \(key.documentation)") }
+            case (.restartBrowser, .string(let text)):
+                guard RestartBrowserMode(rawValue: text) != nil else { throw error("Invalid restart-browser '\(text)'. Use ask, always, or off.") }
             case (.upstreamDNS, .string(let text)):
                 if let bad = Self.servers(text).first(where: { IPv4Address($0) == nil && IPv6Address($0) == nil }) {
                     throw error("'\(bad)' isn't an IP address. \(key.documentation)")
@@ -122,6 +135,7 @@ public struct AppConfigurationStore: Sendable, AppConfigurationStoreReadAccess {
         case .hotkey: .string(config.hotkey)
         case .blockBypassCanaries: .boolean(config.blockBypassCanaries)
         case .upstreamDNS: .string(config.upstreamDNS.joined(separator: ","))
+        case .restartBrowser: .string(config.restartBrowser.rawValue)
         }
     }
     public func load() throws -> AppConfiguration {
@@ -134,6 +148,7 @@ public struct AppConfigurationStore: Sendable, AppConfigurationStoreReadAccess {
         if let v = bool(.blockBypassCanaries) { configuration.blockBypassCanaries = v }
         if let v = string(.hotkey) { configuration.hotkey = v.isEmpty ? "" : HotkeyChord(v)?.description ?? v }
         if let v = string(.upstreamDNS) { configuration.upstreamDNS = Self.servers(v) }
+        if let v = string(.restartBrowser), let mode = RestartBrowserMode(rawValue: v) { configuration.restartBrowser = mode }
         return configuration
     }
     public func validate() throws { _ = try overrides() }
@@ -162,6 +177,8 @@ public struct AppConfigurationStore: Sendable, AppConfigurationStoreReadAccess {
             value = .string(trimmed.isEmpty ? "" : HotkeyChord(trimmed)!.description)
         case .upstreamDNS:
             value = .string(Self.servers(text).joined(separator: ","))
+        case .restartBrowser:
+            value = .string(text.trimmingCharacters(in: .whitespaces).lowercased())
         }
         try validate([key.rawValue: value])
         return try update { $0[key.rawValue] = value == self.value(key) ? nil : value }

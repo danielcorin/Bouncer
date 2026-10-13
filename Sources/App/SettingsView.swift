@@ -55,6 +55,15 @@ struct SettingsView: View {
             Section("Behavior") {
                 Toggle("Turn blocking on when Bouncer launches", isOn: binding(.enableOnLaunch, \.enableOnLaunch))
                 Toggle("Flash the menu bar when a site is blocked", isOn: binding(.flashIndicator, \.flashIndicator))
+                Picker(selection: Binding(get: { config.restartBrowser },
+                                          set: { configuration.set(.restartBrowser, value: $0.rawValue) })) {
+                    Text("Ask").tag(RestartBrowserMode.ask)
+                    Text("Always").tag(RestartBrowserMode.always)
+                    Text("Never").tag(RestartBrowserMode.off)
+                } label: {
+                    Text("Restart \(browserName) after adding blocks")
+                    Text("Browsers keep using connections they already have open, so a site you just blocked can stay loaded until the browser restarts.")
+                }
                 Toggle(isOn: binding(.blockBypassCanaries, \.blockBypassCanaries)) {
                     Text("Prevent DNS bypass while blocking")
                     Text("Signals Firefox's DNS-over-HTTPS to use system DNS so blocks apply to it too.")
@@ -164,6 +173,8 @@ struct SettingsView: View {
             Text("Blocking turns off. macOS will ask you to allow the tunnel again next time you enable it.")
         }
     }
+
+    private var browserName: String { WorkspaceBrowserController().defaultBrowser()?.name ?? "your browser" }
 
     private var tunnelStatus: String {
         guard store.tunnel.installed else { return "Not installed — installs the first time you turn blocking on" }

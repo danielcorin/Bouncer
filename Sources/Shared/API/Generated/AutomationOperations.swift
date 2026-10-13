@@ -30,6 +30,21 @@ public enum APIInputs {
         public init() {
         }
     }
+    public struct BrowserRestart: Codable, Sendable {
+        public var force: Bool
+        public init(force: Bool) {
+            self.force = force
+        }
+        enum CodingKeys: String, CodingKey { case force }
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            force = try c.decode(Bool.self, forKey: .force)
+        }
+        public func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(force, forKey: .force)
+        }
+    }
     public struct ConfigGet: Codable, Sendable {
         public var key: String
         public init(key: String) {
@@ -283,6 +298,17 @@ public enum APIOperations {
             return try await application.blockingToggle(input)
         }
     }
+    public enum BrowserRestart: LocalAppOperation {
+        public typealias Input = APIInputs.BrowserRestart
+        public typealias Output = Components.Schemas.BrowserRestart
+        public static let definition: OperationDefinition = .init(id: "browserRestart", command: ["browser", "restart"], summary: "Quit and relaunch the default browser so it drops connections to newly blocked sites", method: "POST", path: "/v1/browser/restart", fields: [
+            .init(name: "force", location: "body", type: "boolean", required: true, nullable: false, option: "--force", argument: nil, description: "Confirm quitting and relaunching the default browser; unsubmitted form text is lost.")
+        ], destructive: true, upload: false, download: false, responseSchema: "#/components/schemas/BrowserRestartResult", capabilities: ["running-app"])
+        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
+            try definition.validate(JSONValue.encode(input))
+            return try await application.browserRestart(input)
+        }
+    }
     public enum ConfigGet: LocalAppOperation {
         public typealias Input = APIInputs.ConfigGet
         public typealias Output = Components.Schemas.AppConfigurationEntry
@@ -473,6 +499,7 @@ public enum OperationID: String, Codable, CaseIterable, Sendable {
     case blockingOff
     case blockingOn
     case blockingToggle
+    case browserRestart
     case configGet
     case configList
     case configReload
@@ -496,6 +523,7 @@ public protocol ApplicationOperations: Sendable {
     func blockingOff(_ input: APIInputs.BlockingOff) async throws -> Components.Schemas.BlockingState
     func blockingOn(_ input: APIInputs.BlockingOn) async throws -> Components.Schemas.BlockingState
     func blockingToggle(_ input: APIInputs.BlockingToggle) async throws -> Components.Schemas.BlockingState
+    func browserRestart(_ input: APIInputs.BrowserRestart) async throws -> Components.Schemas.BrowserRestart
     func quit(_ input: APIInputs.Quit) async throws -> Components.Schemas.Message
     func ruleAdd(_ input: APIInputs.RuleAdd) async throws -> Components.Schemas.Rule
     func ruleList(_ input: APIInputs.RuleList) async throws -> Components.Schemas.RuleList
@@ -522,6 +550,9 @@ public extension ApplicationOperations {
         case "blockingToggle":
             try APIOperations.BlockingToggle.definition.validate(request.input)
             return try await JSONValue.encode(blockingToggle(request.input.decode(APIInputs.BlockingToggle.self)))
+        case "browserRestart":
+            try APIOperations.BrowserRestart.definition.validate(request.input)
+            return try await JSONValue.encode(browserRestart(request.input.decode(APIInputs.BrowserRestart.self)))
         case "quit":
             try APIOperations.Quit.definition.validate(request.input)
             return try await JSONValue.encode(quit(request.input.decode(APIInputs.Quit.self)))

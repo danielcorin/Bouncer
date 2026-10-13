@@ -111,6 +111,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/tunnel/remove`.
     /// - Remark: Generated from `#/paths//v1/tunnel/remove/post(tunnelRemove)`.
     func tunnelRemove(_ input: Operations.tunnelRemove.Input) async throws -> Operations.tunnelRemove.Output
+    /// Quit and relaunch the default browser so it drops connections to newly blocked sites
+    ///
+    /// - Remark: HTTP `POST /v1/browser/restart`.
+    /// - Remark: Generated from `#/paths//v1/browser/restart/post(browserRestart)`.
+    func browserRestart(_ input: Operations.browserRestart.Input) async throws -> Operations.browserRestart.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -321,6 +326,19 @@ extension APIProtocol {
         body: Operations.tunnelRemove.Input.Body
     ) async throws -> Operations.tunnelRemove.Output {
         try await tunnelRemove(Operations.tunnelRemove.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Quit and relaunch the default browser so it drops connections to newly blocked sites
+    ///
+    /// - Remark: HTTP `POST /v1/browser/restart`.
+    /// - Remark: Generated from `#/paths//v1/browser/restart/post(browserRestart)`.
+    public func browserRestart(
+        headers: Operations.browserRestart.Input.Headers = .init(),
+        body: Operations.browserRestart.Input.Body
+    ) async throws -> Operations.browserRestart.Output {
+        try await browserRestart(Operations.browserRestart.Input(
             headers: headers,
             body: body
         ))

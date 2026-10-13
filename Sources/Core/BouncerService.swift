@@ -9,6 +9,8 @@ public protocol AppShell: AnyObject {
     var isFrontmost: Bool { get }
     func show() throws -> String
     func quit() throws -> String
+    /// Asks whether to restart the default browser now; false means "not now".
+    func confirmBrowserRestart(_ browser: BrowserInfo) async -> Bool
 }
 
 /// The one implementation of every app operation. The menu bar UI calls it
@@ -17,18 +19,64 @@ public protocol AppShell: AnyObject {
 public final class BouncerService: ApplicationOperations {
     public let store: BlockingStore
     private let shell: AppShell
+    private let browser: BrowserControlling
     private var hotkey: String
+    private var restartMode: RestartBrowserMode
+    private var lastRestartOffer: Date?
+    private var offeringRestart = false
+    /// Minimum time between restart offers, so a burst of rule edits asks once.
+    var restartOfferCooldown: TimeInterval = 30
+    /// The pending ask-or-restart, exposed so tests can await it.
+    private(set) var restartTask: Task<Void, Never>?
 
-    public init(store: BlockingStore, shell: AppShell, configuration: AppConfiguration = .defaults) {
+    public init(store: BlockingStore, shell: AppShell, browser: BrowserControlling, configuration: AppConfiguration = .defaults) {
         self.store = store
         self.shell = shell
+        self.browser = browser
         hotkey = configuration.hotkey
+        restartMode = configuration.restartBrowser
     }
 
     /// Pushes changed runtime settings into the active filter.
     public func applyConfiguration(_ configuration: AppConfiguration) async {
         hotkey = configuration.hotkey
+        restartMode = configuration.restartBrowser
         await store.applyOptions(configuration.filterOptions)
+    }
+
+    // MARK: - Browser restart
+
+    /// Blocking just got stricter. Browsers keep using connections they already
+    /// have open, so a newly blocked site can stay loaded until the browser
+    /// restarts; offer (or perform) that restart without delaying the caller.
+    func blockingTightened() {
+        guard restartMode != .off, store.phase == .on, !offeringRestart else { return }
+        if let lastRestartOffer, Date().timeIntervalSince(lastRestartOffer) < restartOfferCooldown { return }
+        guard let info = browser.defaultBrowser(), info.isRunning else { return }
+        lastRestartOffer = Date()
+        offeringRestart = true
+        let mode = restartMode
+        restartTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.offeringRestart = false }
+            if mode == .ask {
+                guard await self.shell.confirmBrowserRestart(info) else { return }
+            }
+            do { try await self.browser.restart(info) } catch { self.store.note(error.localizedDescription) }
+        }
+    }
+
+    public func browserRestart(_ input: APIInputs.BrowserRestart) async throws -> APIData.BrowserRestart {
+        guard input.force else { throw AutomationFailure("confirmation_required", "Pass --force to quit and relaunch the default browser.") }
+        guard let info = browser.defaultBrowser() else {
+            throw AutomationFailure("unavailable", "macOS doesn't report a default web browser.")
+        }
+        guard info.isRunning else {
+            return .init(browser: info.name, restarted: false, restoresTabs: info.restoresTabs, message: "\(info.name) isn't running; nothing to restart.")
+        }
+        try await browser.restart(info)
+        let tabs = info.restoresTabs == true ? " with its windows and tabs" : ""
+        return .init(browser: info.name, restarted: true, restoresTabs: info.restoresTabs, message: "Restarted \(info.name)\(tabs).")
     }
 
     /// Loads saved tunnel state; call once at launch.
@@ -49,7 +97,9 @@ public final class BouncerService: ApplicationOperations {
     // MARK: - Blocking
 
     public func blockingOn(_ input: APIInputs.BlockingOn) async throws -> APIData.BlockingState {
+        let wasOn = store.phase == .on
         try await store.setEnabled(true)
+        if !wasOn { blockingTightened() }
         return state()
     }
 
@@ -59,7 +109,9 @@ public final class BouncerService: ApplicationOperations {
     }
 
     public func blockingToggle(_ input: APIInputs.BlockingToggle) async throws -> APIData.BlockingState {
-        try await store.setEnabled(!store.isEnabled)
+        let turningOn = !store.isEnabled
+        try await store.setEnabled(turningOn)
+        if turningOn { blockingTightened() }
         return state()
     }
 
@@ -81,12 +133,21 @@ public final class BouncerService: ApplicationOperations {
     }
 
     public func ruleAdd(_ input: APIInputs.RuleAdd) async throws -> APIData.Rule {
-        try await Self.wire(store.addRule(pattern: input.pattern, kind: FilterPattern.kind(input.kind), action: FilterPattern.action(input.action)))
+        let rule = try await store.addRule(pattern: input.pattern, kind: FilterPattern.kind(input.kind), action: FilterPattern.action(input.action))
+        if rule.action == .block && rule.enabled { blockingTightened() }
+        return Self.wire(rule)
     }
 
     public func ruleUpdate(_ input: APIInputs.RuleUpdate) async throws -> APIData.Rule {
-        try await Self.wire(store.updateRule(input.id, pattern: input.pattern, kind: FilterPattern.kind(input.kind),
-                                             action: FilterPattern.action(input.action), enabled: input.enabled))
+        let before = try store.resolve(input.id)
+        let rule = try await store.updateRule(input.id, pattern: input.pattern, kind: FilterPattern.kind(input.kind),
+                                              action: FilterPattern.action(input.action), enabled: input.enabled)
+        // Stricter when a block rule now applies that didn't (or matches differently).
+        let wasBlocking = before.enabled && before.action == .block
+        if rule.enabled && rule.action == .block && (!wasBlocking || rule.pattern != before.pattern || rule.kind != before.kind) {
+            blockingTightened()
+        }
+        return Self.wire(rule)
     }
 
     public func ruleRemove(_ input: APIInputs.RuleRemove) async throws -> APIData.Rule {

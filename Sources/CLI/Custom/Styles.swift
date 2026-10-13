@@ -24,6 +24,7 @@ enum BouncerCLIStyles {
             case .unmatched: "\(test.domain): no rule matches"
             }
         }
+        environment.render(APIOperations.BrowserRestart.self) { $0.message }
         environment.render(APIOperations.ActivityList.self) { activity in
             let lines = activity.events.map { event in
                 "\(event.at)  \(event.domain)\(event.count > 1 ? " ×\(event.count)" : "")  (\(event.rulePattern))"

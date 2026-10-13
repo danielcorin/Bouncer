@@ -154,6 +154,9 @@ public final class BlockingStore: BlockingStoreReadAccess {
         refreshTunnel()
     }
 
+    /// Surfaces a non-fatal problem (e.g. the browser didn't restart) in the menu.
+    func note(_ text: String) { message = text }
+
     public func refreshTunnel() {
         tunnel = backend.installation
         tunnelConnected = backend.isConnected

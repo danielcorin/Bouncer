@@ -346,7 +346,7 @@ final class BlockingStoreTests: XCTestCase {
         let backend = InMemoryFilterBackend()
         let store = makeStore(backend)
         try await store.setEnabled(true)
-        let service = BouncerService(store: store, shell: TestShell())
+        let service = BouncerService(store: store, shell: TestShell(), browser: FakeBrowserController())
         await service.applyConfiguration(AppConfiguration(blockBypassCanaries: false, upstreamDNS: ["9.9.9.9"]))
         XCTAssertEqual(backend.activeOptions, FilterOptions(blockBypassCanaries: false, upstreamServers: ["9.9.9.9"]))
         let state = try await service.status(.init()).blocking
@@ -356,10 +356,150 @@ final class BlockingStoreTests: XCTestCase {
 }
 
 @MainActor
-private final class TestShell: AppShell {
+final class BrowserRestartTests: XCTestCase {
+    private var root: URL!
+    private var backend: InMemoryFilterBackend!
+    private var browser: FakeBrowserController!
+    private var shell: TestShell!
+
+    override func setUp() async throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        backend = InMemoryFilterBackend()
+        browser = FakeBrowserController()
+        shell = TestShell()
+    }
+
+    override func tearDown() async throws {
+        try? FileManager.default.removeItem(at: root)
+    }
+
+    private func makeService(_ mode: RestartBrowserMode, cooldown: TimeInterval = 0) -> BouncerService {
+        let store = BlockingStore(rulesURL: root.appendingPathComponent("rules.json"), backend: backend)
+        let service = BouncerService(store: store, shell: shell, browser: browser, configuration: AppConfiguration(restartBrowser: mode))
+        service.restartOfferCooldown = cooldown
+        return service
+    }
+
+    private func settle(_ service: BouncerService) async { await service.restartTask?.value }
+
+    func testAskModeRestartsOnlyAfterConfirmation() async throws {
+        shell.confirmAnswer = true
+        let service = makeService(.ask)
+        _ = try await service.blockingOn(.init())
+        await settle(service)
+        XCTAssertEqual(shell.prompts.map(\.name), ["Fixture Browser"])
+        XCTAssertEqual(browser.restarts.count, 1)
+    }
+
+    func testDecliningTheAskDoesNotRestart() async throws {
+        shell.confirmAnswer = false
+        let service = makeService(.ask)
+        _ = try await service.blockingToggle(.init())
+        await settle(service)
+        XCTAssertEqual(shell.prompts.count, 1)
+        XCTAssertTrue(browser.restarts.isEmpty)
+    }
+
+    func testAlwaysRestartsWithoutAskingAndOffDoesNothing() async throws {
+        let always = makeService(.always)
+        _ = try await always.blockingOn(.init())
+        await settle(always)
+        XCTAssertTrue(shell.prompts.isEmpty)
+        XCTAssertEqual(browser.restarts.count, 1)
+
+        _ = try await always.blockingOff(.init())
+        let off = makeService(.off)
+        _ = try await off.blockingOn(.init())
+        await settle(off)
+        XCTAssertEqual(browser.restarts.count, 1, "off never restarts")
+    }
+
+    func testOnlyNewBlocksWhileBlockingIsOnTrigger() async throws {
+        let service = makeService(.always)
+        _ = try await service.ruleAdd(.init(pattern: "early.com"))
+        await settle(service)
+        XCTAssertTrue(browser.restarts.isEmpty, "Adding rules while off doesn't restart")
+
+        _ = try await service.blockingOn(.init())
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 1)
+
+        _ = try await service.blockingOn(.init())
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 1, "Already on: nothing new to apply")
+
+        _ = try await service.ruleAdd(.init(action: "allow", pattern: "ok.com"))
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 1, "Allow rules only loosen blocking")
+
+        let rule = try await service.ruleAdd(.init(pattern: "linkedin.com"))
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 2, "A new block rule while on")
+
+        _ = try await service.ruleUpdate(.init(enabled: false, id: rule.id))
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 2, "Disabling a rule loosens blocking")
+        _ = try await service.ruleUpdate(.init(enabled: true, id: rule.id))
+        await settle(service)
+        XCTAssertEqual(browser.restarts.count, 3, "Re-enabling a block rule tightens it")
+    }
+
+    func testSkipsWhenTheBrowserIsNotRunningAndRespectsTheCooldown() async throws {
+        browser.browser?.isRunning = false
+        let quiet = makeService(.ask)
+        _ = try await quiet.blockingOn(.init())
+        await settle(quiet)
+        XCTAssertTrue(shell.prompts.isEmpty, "Nothing to restart")
+
+        _ = try await quiet.blockingOff(.init())
+        browser.browser?.isRunning = true
+        let service = makeService(.ask, cooldown: 60)
+        _ = try await service.blockingOn(.init())
+        await settle(service)
+        _ = try await service.ruleAdd(.init(pattern: "a.com"))
+        _ = try await service.ruleAdd(.init(pattern: "b.com"))
+        await settle(service)
+        XCTAssertEqual(shell.prompts.count, 1, "A burst of changes asks once")
+    }
+
+    func testRestartFailureIsReportedInTheMenu() async throws {
+        browser.restartFailure = FilterBackendError("browser_busy", "Fixture Browser didn't quit.")
+        let service = makeService(.always)
+        _ = try await service.blockingOn(.init())
+        await settle(service)
+        XCTAssertEqual(service.store.message, "Fixture Browser didn't quit.")
+        XCTAssertEqual(service.store.phase, .on, "Blocking itself is unaffected")
+    }
+
+    func testEngineDetectionAndTabRestore() {
+        let helium = URL(fileURLWithPath: "/Applications/Helium.app")
+        XCTAssertEqual(WorkspaceBrowserController.engine(identifier: "net.imput.helium", appURL: helium), .chromium)
+        XCTAssertEqual(WorkspaceBrowserController.engine(identifier: "com.apple.Safari", appURL: helium), .safari)
+        XCTAssertEqual(WorkspaceBrowserController.engine(identifier: "org.mozilla.firefox", appURL: helium), .firefox)
+        let chromium = BrowserInfo(name: "C", bundleIdentifier: "c", appURL: helium, engine: .chromium, isRunning: true)
+        XCTAssertEqual(chromium.restoresTabs, true)
+        XCTAssertNil(BrowserInfo(name: "S", bundleIdentifier: "s", appURL: helium, engine: .safari, isRunning: true).restoresTabs)
+    }
+
+    func testRestartModeConfiguration() throws {
+        let store = AppConfigurationStore(fileURL: root.appendingPathComponent("config.toml"))
+        XCTAssertEqual(try store.load().restartBrowser, .ask)
+        XCTAssertEqual(try store.set(.restartBrowser, value: "OFF").restartBrowser, .off)
+        XCTAssertThrowsError(try store.set(.restartBrowser, value: "sometimes"))
+    }
+}
+
+@MainActor
+final class TestShell: AppShell {
+    var confirmAnswer = false
+    private(set) var prompts: [BrowserInfo] = []
     let appName = "Test"
     let version = "0"
     let isFrontmost = false
     func show() throws -> String { "shown" }
     func quit() throws -> String { "quit" }
+    func confirmBrowserRestart(_ browser: BrowserInfo) async -> Bool {
+        prompts.append(browser)
+        return confirmAnswer
+    }
 }
