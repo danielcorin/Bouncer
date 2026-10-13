@@ -116,6 +116,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/browser/restart`.
     /// - Remark: Generated from `#/paths//v1/browser/restart/post(browserRestart)`.
     func browserRestart(_ input: Operations.browserRestart.Input) async throws -> Operations.browserRestart.Output
+    /// Denied attempts per day and site
+    ///
+    /// - Remark: HTTP `GET /v1/stats`.
+    /// - Remark: Generated from `#/paths//v1/stats/get(statsShow)`.
+    func statsShow(_ input: Operations.statsShow.Input) async throws -> Operations.statsShow.Output
+    /// Delete all recorded stats
+    ///
+    /// - Remark: HTTP `POST /v1/stats/clear`.
+    /// - Remark: Generated from `#/paths//v1/stats/clear/post(statsClear)`.
+    func statsClear(_ input: Operations.statsClear.Input) async throws -> Operations.statsClear.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -339,6 +349,32 @@ extension APIProtocol {
         body: Operations.browserRestart.Input.Body
     ) async throws -> Operations.browserRestart.Output {
         try await browserRestart(Operations.browserRestart.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Denied attempts per day and site
+    ///
+    /// - Remark: HTTP `GET /v1/stats`.
+    /// - Remark: Generated from `#/paths//v1/stats/get(statsShow)`.
+    public func statsShow(
+        query: Operations.statsShow.Input.Query = .init(),
+        headers: Operations.statsShow.Input.Headers = .init()
+    ) async throws -> Operations.statsShow.Output {
+        try await statsShow(Operations.statsShow.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Delete all recorded stats
+    ///
+    /// - Remark: HTTP `POST /v1/stats/clear`.
+    /// - Remark: Generated from `#/paths//v1/stats/clear/post(statsClear)`.
+    public func statsClear(
+        headers: Operations.statsClear.Input.Headers = .init(),
+        body: Operations.statsClear.Input.Body
+    ) async throws -> Operations.statsClear.Output {
+        try await statsClear(Operations.statsClear.Input(
             headers: headers,
             body: body
         ))

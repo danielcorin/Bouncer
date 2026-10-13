@@ -13,13 +13,14 @@ enum SnapshotRenderer {
         let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("bouncer-snapshots-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: scratch) }
         let backend = SnapshotBackend()
+        writeSampleStats(to: scratch.appendingPathComponent("stats.json"))
         let store = BlockingStore(rulesURL: scratch.appendingPathComponent("rules.json"), backend: backend)
         let configuration = AppConfigurationModel(store: AppConfigurationStore(fileURL: scratch.appendingPathComponent("config.toml")))
         let service = BouncerService(store: store, shell: SnapshotShell(), browser: SnapshotBrowser())
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         func menu() -> some View {
-            MenuView(store: store, service: service, configuration: configuration, openSettings: {}, openAbout: {}, quit: {})
+            MenuView(store: store, service: service, configuration: configuration, openSettings: {}, openAbout: {}, openStats: {}, quit: {})
         }
         await render(menu(), "menu-empty", into: directory)
         for pattern in ["reddit.com", "/tiktok|instagram/", "news.ycombinator.com", "*.substack.com"] {
@@ -43,6 +44,27 @@ enum SnapshotRenderer {
         await render(menu(), "menu-failed", into: directory)
         await render(SettingsView(store: store, service: service, configuration: configuration, openAbout: {}), "settings", into: directory)
         await render(AboutView(configuration: configuration, openSettings: {}), "about", into: directory)
+        await render(StatsView(stats: store.stats, service: service), "stats", into: directory)
+    }
+
+    /// Two weeks of plausible history (deterministic, so renders are comparable).
+    private static func writeSampleStats(to url: URL) {
+        let sites = ["reddit.com", "news.ycombinator.com", "linkedin.com", "instagram.com", "x.com", "youtube.com"]
+        let weights = [5, 4, 3, 2, 2, 1]
+        let formatter = ISO8601DateFormatter()
+        var days: [[String: Any]] = []
+        for offset in 0..<14 {
+            guard let date = Calendar.current.date(byAdding: .day, value: -offset, to: Date()) else { continue }
+            let entries: [[String: Any]] = sites.enumerated().compactMap { index, site in
+                let attempts = (weights[index] * (offset * 7 + index * 3 + 5)) % 9
+                guard attempts > 0 else { return nil }
+                return ["site": site, "attempts": attempts, "lookups": attempts * 4,
+                        "lastDenied": formatter.string(from: date)]
+            }
+            days.append(["date": DenialStatsStore.dayKey(for: date), "sites": entries])
+        }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        if let data = try? JSONSerialization.data(withJSONObject: ["version": 1, "days": days]) { try? data.write(to: url) }
     }
 
     private static func render(_ view: some View, _ name: String, into directory: URL) async {
@@ -58,7 +80,10 @@ enum SnapshotRenderer {
             window.backgroundColor = .windowBackgroundColor
             window.contentView = host
             host.layoutSubtreeIfNeeded()
-            let size = host.fittingSize
+            var size = host.fittingSize
+            // Views built on GeometryReader (charts) can report no natural height.
+            if size.width < 1 || size.height < 1 { size = CGSize(width: max(size.width, 560), height: 720) }
+            FileHandle.standardError.write(Data("snapshot \(name)-\(suffix): \(size)\n".utf8))
             window.setContentSize(size)
             host.frame = CGRect(origin: .zero, size: size)
             try? await Task.sleep(for: .milliseconds(300))

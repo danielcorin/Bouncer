@@ -103,6 +103,21 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
             try require(value["events"].elements.first?["domain"] == .string("news.ycombinator.com"), "Most recent first")
         },
         .init(APIOperations.ActivityList.self, error: "invalid_input", input: { .init(limit: 0) }) { _ in },
+        // The activation probes above: three example.com lookups (one attempt) and news.ycombinator.com (regex → ycombinator.com).
+        .init(APIOperations.StatsShow.self, input: { .init(days: 1) }) { value in
+            let today = value["days"].elements.first
+            try require(value["days"].elements.count == 1 && today?["date"] == .string(DenialStatsStore.dayKey(for: Date())), "Today only")
+            let sites = today?["sites"].elements ?? []
+            try require(sites.compactMap { $0["site"].string } == ["example.com", "ycombinator.com"], "Sites ranked, named by rule or main domain")
+            try require(sites.first?["attempts"] == .integer(1) && sites.first?["lookups"] == .integer(3), "A burst of lookups is one attempt")
+            try require(value["todayAttempts"] == .integer(2) && value["totalAttempts"] == .integer(2), "Totals")
+        },
+        .init(APIOperations.StatsShow.self, input: { .init(days: 7) }) { value in
+            try require(value["days"].elements.count == 7, "Empty days are included")
+            try require(value["days"].elements.first?["date"] == .string(DenialStatsStore.dayKey(for: Date())), "Newest first")
+        },
+        .init(APIOperations.StatsShow.self, error: "invalid_input", input: { .init(date: "13/10/2026") }) { _ in },
+        .init(APIOperations.StatsShow.self, error: "invalid_input", input: { .init(days: 0) }) { _ in },
         .init(APIOperations.BlockingToggle.self, input: { .init() }) { value in
             try require(value["enabled"] == .bool(false) && value["phase"] == .string("off"), "Toggle turns blocking off")
         },
@@ -133,6 +148,10 @@ func appScenarios(application: any ApplicationOperations, configuration: Configu
         .init(APIOperations.RuleRemove.self, error: "not_found", input: { .init(id: "example.com") }) { _ in },
         .init(APIOperations.RuleList.self, input: { .init() }) { value in
             try require(value["rules"].elements.compactMap { $0["pattern"].string } == ["^news\\.ycombinator\\.com$", "ok.example.com"], "Remaining rules keep their order")
+        },
+        .init(APIOperations.StatsClear.self, error: "force_required", input: { .init(force: false) }) { _ in },
+        .init(APIOperations.StatsClear.self, input: { .init(force: true) }) { value in
+            try require(value["totalAttempts"] == .integer(0) && value["days"].elements.first?["sites"].elements.isEmpty == true, "Stats cleared")
         },
     ]
     return try ScenarioSuite(steps: steps, application: application, configuration: configuration, transfers: transfers,

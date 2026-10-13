@@ -60,6 +60,7 @@ final class AppRuntime {
     private var statusItem: StatusItemController?
     private var settingsWindow: SettingsWindowController?
     private var aboutWindow: AboutWindowController?
+    private var statsWindow: StatsWindowController?
     private var cancellables: Set<AnyCancellable> = []
 
     private lazy var host = AutomationHost(
@@ -82,7 +83,8 @@ final class AppRuntime {
         configurationModel.start()
         let statusItem = StatusItemController(store: store, service: service, configuration: configurationModel,
                                               openSettings: { [weak self] in self?.showSettings() },
-                                              openAbout: { [weak self] in self?.showAbout() })
+                                              openAbout: { [weak self] in self?.showAbout() },
+                                              openStats: { [weak self] in self?.showStats() })
         self.statusItem = statusItem
         shell.onShow = { [weak statusItem] in statusItem?.showPopover() }
         shell.onRememberRestartChoice = { [weak self] mode in
@@ -139,6 +141,11 @@ final class AppRuntime {
         settingsWindow?.present()
     }
 
+    func showStats() {
+        if statsWindow == nil { statsWindow = StatsWindowController(store: store, service: service) }
+        statsWindow?.present()
+    }
+
     func showAbout() {
         if aboutWindow == nil {
             aboutWindow = AboutWindowController(configuration: configurationModel) { [weak self] in
@@ -166,6 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let app = NSMenu(title: "Bouncer")
         app.addItem(withTitle: "About Bouncer", action: #selector(AppDelegate.showAbout(_:)), keyEquivalent: "")
         app.addItem(.separator())
+        app.addItem(withTitle: "Stats…", action: #selector(AppDelegate.showStats(_:)), keyEquivalent: "")
         app.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettings(_:)), keyEquivalent: ",")
         app.addItem(.separator())
         app.addItem(withTitle: "Quit Bouncer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -187,6 +195,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings(_ sender: Any?) {
         MainActor.assumeIsolated { AppRuntime.shared.showSettings() }
+    }
+
+    @objc func showStats(_ sender: Any?) {
+        MainActor.assumeIsolated { AppRuntime.shared.showStats() }
     }
 
     @objc func showAbout(_ sender: Any?) {

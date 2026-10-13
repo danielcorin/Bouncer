@@ -1634,5 +1634,255 @@ extension Components {
                 ])
             }
         }
+        /// - Remark: Generated from `#/components/schemas/SiteStat`.
+        public struct SiteStat: Codable, Hashable, Sendable {
+            /// The blocked site: the domain in a domain rule, or the looked-up site's main domain for a regex rule.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SiteStat/site`.
+            public var site: Swift.String
+            /// Times you were denied: blocked lookups for this site within 10 seconds count as one attempt.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SiteStat/attempts`.
+            public var attempts: Swift.Int
+            /// Raw blocked DNS lookups (one page visit makes several).
+            ///
+            /// - Remark: Generated from `#/components/schemas/SiteStat/lookups`.
+            public var lookups: Swift.Int
+            /// ISO 8601 time of the most recent blocked lookup.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SiteStat/lastDenied`.
+            public var lastDenied: Swift.String
+            /// Creates a new `SiteStat`.
+            ///
+            /// - Parameters:
+            ///   - site: The blocked site: the domain in a domain rule, or the looked-up site's main domain for a regex rule.
+            ///   - attempts: Times you were denied: blocked lookups for this site within 10 seconds count as one attempt.
+            ///   - lookups: Raw blocked DNS lookups (one page visit makes several).
+            ///   - lastDenied: ISO 8601 time of the most recent blocked lookup.
+            public init(
+                site: Swift.String,
+                attempts: Swift.Int,
+                lookups: Swift.Int,
+                lastDenied: Swift.String
+            ) {
+                self.site = site
+                self.attempts = attempts
+                self.lookups = lookups
+                self.lastDenied = lastDenied
+            }
+            public enum CodingKeys: String, CodingKey {
+                case site
+                case attempts
+                case lookups
+                case lastDenied
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.site = try container.decode(
+                    Swift.String.self,
+                    forKey: .site
+                )
+                self.attempts = try container.decode(
+                    Swift.Int.self,
+                    forKey: .attempts
+                )
+                self.lookups = try container.decode(
+                    Swift.Int.self,
+                    forKey: .lookups
+                )
+                self.lastDenied = try container.decode(
+                    Swift.String.self,
+                    forKey: .lastDenied
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "site",
+                    "attempts",
+                    "lookups",
+                    "lastDenied"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DayStat`.
+        public struct DayStat: Codable, Hashable, Sendable {
+            /// Local calendar day, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DayStat/date`.
+            public var date: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DayStat/attempts`.
+            public var attempts: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/DayStat/lookups`.
+            public var lookups: Swift.Int
+            /// Most-denied first.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DayStat/sites`.
+            public var sites: [Components.Schemas.SiteStat]
+            /// Creates a new `DayStat`.
+            ///
+            /// - Parameters:
+            ///   - date: Local calendar day, YYYY-MM-DD.
+            ///   - attempts:
+            ///   - lookups:
+            ///   - sites: Most-denied first.
+            public init(
+                date: Swift.String,
+                attempts: Swift.Int,
+                lookups: Swift.Int,
+                sites: [Components.Schemas.SiteStat]
+            ) {
+                self.date = date
+                self.attempts = attempts
+                self.lookups = lookups
+                self.sites = sites
+            }
+            public enum CodingKeys: String, CodingKey {
+                case date
+                case attempts
+                case lookups
+                case sites
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.date = try container.decode(
+                    Swift.String.self,
+                    forKey: .date
+                )
+                self.attempts = try container.decode(
+                    Swift.Int.self,
+                    forKey: .attempts
+                )
+                self.lookups = try container.decode(
+                    Swift.Int.self,
+                    forKey: .lookups
+                )
+                self.sites = try container.decode(
+                    [Components.Schemas.SiteStat].self,
+                    forKey: .sites
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "date",
+                    "attempts",
+                    "lookups",
+                    "sites"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Stats`.
+        public struct Stats: Codable, Hashable, Sendable {
+            /// Newest first; days with no denials are included with zero counts.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/days`.
+            public var days: [Components.Schemas.DayStat]
+            /// - Remark: Generated from `#/components/schemas/Stats/todayAttempts`.
+            public var todayAttempts: Swift.Int
+            /// All recorded days.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Stats/totalAttempts`.
+            public var totalAttempts: Swift.Int
+            /// Creates a new `Stats`.
+            ///
+            /// - Parameters:
+            ///   - days: Newest first; days with no denials are included with zero counts.
+            ///   - todayAttempts:
+            ///   - totalAttempts: All recorded days.
+            public init(
+                days: [Components.Schemas.DayStat],
+                todayAttempts: Swift.Int,
+                totalAttempts: Swift.Int
+            ) {
+                self.days = days
+                self.todayAttempts = todayAttempts
+                self.totalAttempts = totalAttempts
+            }
+            public enum CodingKeys: String, CodingKey {
+                case days
+                case todayAttempts
+                case totalAttempts
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.days = try container.decode(
+                    [Components.Schemas.DayStat].self,
+                    forKey: .days
+                )
+                self.todayAttempts = try container.decode(
+                    Swift.Int.self,
+                    forKey: .todayAttempts
+                )
+                self.totalAttempts = try container.decode(
+                    Swift.Int.self,
+                    forKey: .totalAttempts
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "days",
+                    "todayAttempts",
+                    "totalAttempts"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsResult`.
+        public struct StatsResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StatsResult/requestId`.
+            public var requestId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/StatsResult/data`.
+            public var data: Components.Schemas.Stats
+            /// Creates a new `StatsResult`.
+            ///
+            /// - Parameters:
+            ///   - requestId:
+            ///   - data:
+            public init(
+                requestId: Swift.String,
+                data: Components.Schemas.Stats
+            ) {
+                self.requestId = requestId
+                self.data = data
+            }
+            public enum CodingKeys: String, CodingKey {
+                case requestId
+                case data
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.requestId = try container.decode(
+                    Swift.String.self,
+                    forKey: .requestId
+                )
+                self.data = try container.decode(
+                    Components.Schemas.Stats.self,
+                    forKey: .data
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "requestId",
+                    "data"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StatsClearBody`.
+        public struct StatsClearBody: Codable, Hashable, Sendable {
+            /// Confirm deleting all recorded stats.
+            ///
+            /// - Remark: Generated from `#/components/schemas/StatsClearBody/force`.
+            public var force: Swift.Bool
+            /// Creates a new `StatsClearBody`.
+            ///
+            /// - Parameters:
+            ///   - force: Confirm deleting all recorded stats.
+            public init(force: Swift.Bool) {
+                self.force = force
+            }
+            public enum CodingKeys: String, CodingKey {
+                case force
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.force = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .force
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "force"
+                ])
+            }
+        }
     }
 }

@@ -173,6 +173,39 @@ public final class BouncerService: ApplicationOperations {
         }, blockedCount: store.blockedCount)
     }
 
+    // MARK: - Stats
+
+    public func statsShow(_ input: APIInputs.StatsShow) async throws -> APIData.Stats {
+        let days: [DayDenials]
+        if let date = input.date?.trimmingCharacters(in: .whitespaces), !date.isEmpty {
+            guard DenialStatsStore.date(forKey: date) != nil else {
+                throw AutomationFailure("invalid_input", "Use a date like \(DenialStatsStore.dayKey(for: Date())).")
+            }
+            days = [store.stats.day(date)]
+        } else {
+            let count = input.days ?? 7
+            guard (1...366).contains(count) else { throw AutomationFailure("invalid_input", "--days must be between 1 and 366.") }
+            days = store.stats.recentDays(count, endingOn: Date()).reversed()
+        }
+        return statsResult(days)
+    }
+
+    public func statsClear(_ input: APIInputs.StatsClear) async throws -> APIData.Stats {
+        guard input.force else { throw AutomationFailure("confirmation_required", "Pass --force to delete all stats.") }
+        store.stats.clear()
+        return statsResult([store.stats.day(DenialStatsStore.dayKey(for: Date()))])
+    }
+
+    private func statsResult(_ days: [DayDenials]) -> APIData.Stats {
+        let formatter = ISO8601DateFormatter()
+        let today = store.stats.day(DenialStatsStore.dayKey(for: Date()))
+        return .init(days: days.map { day in
+            .init(date: day.date, attempts: day.attempts, lookups: day.lookups, sites: day.ranked.map {
+                .init(site: $0.site, attempts: $0.attempts, lookups: $0.lookups, lastDenied: formatter.string(from: $0.lastDenied))
+            })
+        }, todayAttempts: today.attempts, totalAttempts: store.stats.totalAttempts)
+    }
+
     // MARK: - Wire mapping
 
     func state() -> APIData.BlockingState {

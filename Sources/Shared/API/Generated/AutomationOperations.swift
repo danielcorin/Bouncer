@@ -224,6 +224,40 @@ public enum APIInputs {
         public init() {
         }
     }
+    public struct StatsClear: Codable, Sendable {
+        public var force: Bool
+        public init(force: Bool) {
+            self.force = force
+        }
+        enum CodingKeys: String, CodingKey { case force }
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            force = try c.decode(Bool.self, forKey: .force)
+        }
+        public func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(force, forKey: .force)
+        }
+    }
+    public struct StatsShow: Codable, Sendable {
+        public var date: String?
+        public var days: Int?
+        public init(date: String? = nil, days: Int? = nil) {
+            self.date = date
+            self.days = days
+        }
+        enum CodingKeys: String, CodingKey { case date, days }
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            date = try c.decodeIfPresent(String.self, forKey: .date)
+            days = try c.decodeIfPresent(Int.self, forKey: .days)
+        }
+        public func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encodeIfPresent(date, forKey: .date)
+            try c.encodeIfPresent(days, forKey: .days)
+        }
+    }
     public struct Status: Codable, Sendable {
         public init() {
         }
@@ -459,6 +493,29 @@ public enum APIOperations {
             return try await application.show(input)
         }
     }
+    public enum StatsClear: LocalAppOperation {
+        public typealias Input = APIInputs.StatsClear
+        public typealias Output = Components.Schemas.Stats
+        public static let definition: OperationDefinition = .init(id: "statsClear", command: ["stats", "clear"], summary: "Delete all recorded stats", method: "POST", path: "/v1/stats/clear", fields: [
+            .init(name: "force", location: "body", type: "boolean", required: true, nullable: false, option: "--force", argument: nil, description: "Confirm deleting all recorded stats.")
+        ], destructive: true, upload: false, download: false, responseSchema: "#/components/schemas/StatsResult", capabilities: ["running-app"])
+        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
+            try definition.validate(JSONValue.encode(input))
+            return try await application.statsClear(input)
+        }
+    }
+    public enum StatsShow: LocalAppOperation {
+        public typealias Input = APIInputs.StatsShow
+        public typealias Output = Components.Schemas.Stats
+        public static let definition: OperationDefinition = .init(id: "statsShow", command: ["stats", "show"], summary: "Denied attempts per day and site", method: "GET", path: "/v1/stats", fields: [
+            .init(name: "date", location: "query", type: "string", required: false, nullable: false, option: "--date", argument: nil, description: "One day, YYYY-MM-DD. Overrides --days."),
+            .init(name: "days", location: "query", type: "integer", required: false, nullable: false, option: "--days", argument: nil, description: "How many recent days, 1-366 (default 7).")
+        ], destructive: false, upload: false, download: false, responseSchema: "#/components/schemas/StatsResult", capabilities: ["running-app"])
+        public static func perform(_ input: Input, application: any ApplicationOperations, configuration: any ConfigurationOperations) async throws -> Output {
+            try definition.validate(JSONValue.encode(input))
+            return try await application.statsShow(input)
+        }
+    }
     public enum Status: LocalAppOperation {
         public typealias Input = APIInputs.Status
         public typealias Output = Components.Schemas.AppStatus
@@ -513,6 +570,8 @@ public enum OperationID: String, Codable, CaseIterable, Sendable {
     case ruleTest
     case ruleUpdate
     case show
+    case statsClear
+    case statsShow
     case status
     case tunnelInstall
     case tunnelRemove
@@ -531,6 +590,8 @@ public protocol ApplicationOperations: Sendable {
     func ruleTest(_ input: APIInputs.RuleTest) async throws -> Components.Schemas.RuleTest
     func ruleUpdate(_ input: APIInputs.RuleUpdate) async throws -> Components.Schemas.Rule
     func show(_ input: APIInputs.Show) async throws -> Components.Schemas.Message
+    func statsClear(_ input: APIInputs.StatsClear) async throws -> Components.Schemas.Stats
+    func statsShow(_ input: APIInputs.StatsShow) async throws -> Components.Schemas.Stats
     func status(_ input: APIInputs.Status) async throws -> Components.Schemas.AppStatus
     func tunnelInstall(_ input: APIInputs.TunnelInstall) async throws -> Components.Schemas.BlockingState
     func tunnelRemove(_ input: APIInputs.TunnelRemove) async throws -> Components.Schemas.BlockingState
@@ -574,6 +635,12 @@ public extension ApplicationOperations {
         case "show":
             try APIOperations.Show.definition.validate(request.input)
             return try await JSONValue.encode(show(request.input.decode(APIInputs.Show.self)))
+        case "statsClear":
+            try APIOperations.StatsClear.definition.validate(request.input)
+            return try await JSONValue.encode(statsClear(request.input.decode(APIInputs.StatsClear.self)))
+        case "statsShow":
+            try APIOperations.StatsShow.definition.validate(request.input)
+            return try await JSONValue.encode(statsShow(request.input.decode(APIInputs.StatsShow.self)))
         case "status":
             try APIOperations.Status.definition.validate(request.input)
             return try await JSONValue.encode(status(request.input.decode(APIInputs.Status.self)))

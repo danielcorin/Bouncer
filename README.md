@@ -61,6 +61,10 @@ configuration; after that, toggling never prompts.
   `bouncer config set hotkey --value "shift+cmd+f12"`).
 - **Restart browser**: the ↻ Restart button in the menu's footer quits and reopens
   your default browser so it drops connections to sites you just blocked.
+- **Stats**: the chart button in the menu (or "N today ›" above recent blocks, or
+  Bouncer › Stats…) shows how many times you were denied per day and per site.
+  A denial is one attempt: blocked lookups for the same site within 10 seconds
+  count once. Background lookups, like prefetching, count too.
 - **About**: the ⓘ button in the menu (or Settings › About) shows the version, how
   blocking works, and the shortcuts.
 - **Indicator**: when a lookup is blocked, the menu bar icon turns into a red hand
@@ -96,6 +100,8 @@ bouncer rules update old.reddit.com --enabled false   # ID, ID prefix, or exact 
 bouncer rules remove 71BE9CD1
 bouncer test www.reddit.com          # which rule (if any) applies
 bouncer activity --limit 10          # recently blocked domains
+bouncer stats show --days 7          # denials per day and site (or --date 2026-10-13)
+bouncer stats clear --force          # delete recorded stats
 bouncer browser restart --force      # quit and relaunch the default browser (tabs restored for Chromium)
 bouncer tunnel install | tunnel remove --force
 bouncer config list --all true       # settings live in ~/.config/bouncer/config.toml

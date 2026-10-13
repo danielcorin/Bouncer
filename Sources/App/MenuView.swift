@@ -5,8 +5,10 @@ struct MenuView: View {
     @ObservedObject var store: BlockingStore
     let service: BouncerService
     @ObservedObject var configuration: AppConfigurationModel
+    @ObservedObject private var stats: DenialStatsStore
     let openSettings: () -> Void
     let openAbout: () -> Void
+    let openStats: () -> Void
     let quit: () -> Void
 
     @State private var draft = ""
@@ -19,6 +21,19 @@ struct MenuView: View {
     @State private var restartingBrowser = false
     /// Read on each render so it follows changes to the default browser.
     private var defaultBrowser: BrowserInfo? { WorkspaceBrowserController().defaultBrowser() }
+
+    init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel,
+         openSettings: @escaping () -> Void, openAbout: @escaping () -> Void, openStats: @escaping () -> Void,
+         quit: @escaping () -> Void) {
+        self.store = store
+        self.service = service
+        self.configuration = configuration
+        self.stats = store.stats
+        self.openSettings = openSettings
+        self.openAbout = openAbout
+        self.openStats = openStats
+        self.quit = quit
+    }
 
     private var busy: Bool { store.phase == .starting || store.phase == .stopping }
 
@@ -275,10 +290,17 @@ struct MenuView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(store.blockedCount) since launch")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .monospacedDigit()
+                Button(action: openStats) {
+                    HStack(spacing: 2) {
+                        Text("\(stats.day(DenialStatsStore.dayKey(for: Date())).attempts) today")
+                        Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .help("Open stats")
             }
             TimelineView(.periodic(from: .now, by: 5)) { context in
                 VStack(alignment: .leading, spacing: 4) {
@@ -314,8 +336,12 @@ struct MenuView: View {
 
     private var footer: some View {
         HStack(spacing: 2) {
-            Button(action: openSettings) { Label("Settings…", systemImage: "gearshape") }
+            Button(action: openSettings) { Image(systemName: "gearshape") }
                 .buttonStyle(FooterButtonStyle())
+                .help("Settings… (⌘,)")
+            Button(action: openStats) { Image(systemName: "chart.bar.xaxis") }
+                .buttonStyle(FooterButtonStyle())
+                .help("Stats")
             Button(action: openAbout) { Image(systemName: "info.circle") }
                 .buttonStyle(FooterButtonStyle())
                 .help("About Bouncer")

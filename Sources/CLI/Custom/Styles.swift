@@ -25,6 +25,8 @@ enum BouncerCLIStyles {
             }
         }
         environment.render(APIOperations.BrowserRestart.self) { $0.message }
+        environment.render(APIOperations.StatsShow.self) { stats($0) }
+        environment.render(APIOperations.StatsClear.self) { _ in "Stats cleared." }
         environment.render(APIOperations.ActivityList.self) { activity in
             let lines = activity.events.map { event in
                 "\(event.at)  \(event.domain)\(event.count > 1 ? " ×\(event.count)" : "")  (\(event.rulePattern))"
@@ -40,6 +42,19 @@ enum BouncerCLIStyles {
                      "Hotkey: \(HotkeyChord(state.hotkey)?.displayString ?? "none")",
                      "Tunnel: \(state.tunnel.installed ? "installed" : "not installed (installs on first `bouncer on`)")\(state.tunnel.connected ? ", connected" : "")"]
         if let message = state.message { lines.append(message) }
+        return lines.joined(separator: "\n")
+    }
+
+    static func stats(_ stats: APIData.Stats) -> String {
+        var lines: [String] = []
+        for day in stats.days {
+            lines.append("\(day.date)  \(day.attempts) denied")
+            let width = day.sites.map(\.site.count).max() ?? 0
+            for site in day.sites {
+                lines.append("  " + site.site.padding(toLength: width, withPad: " ", startingAt: 0) + "  \(site.attempts)")
+            }
+        }
+        lines.append("Today: \(stats.todayAttempts) · all time: \(stats.totalAttempts)")
         return lines.joined(separator: "\n")
     }
 

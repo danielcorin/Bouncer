@@ -17,7 +17,7 @@ final class StatusItemController: NSObject {
     private var flashing = false
 
     init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel,
-         openSettings: @escaping () -> Void, openAbout: @escaping () -> Void) {
+         openSettings: @escaping () -> Void, openAbout: @escaping () -> Void, openStats: @escaping () -> Void) {
         self.store = store
         self.service = service
         self.configuration = configuration
@@ -31,6 +31,10 @@ final class StatusItemController: NSObject {
             openAbout: { [weak self] in
                 self?.panel.close()
                 openAbout()
+            },
+            openStats: { [weak self] in
+                self?.panel.close()
+                openStats()
             },
             quit: { NSApp.terminate(nil) }))
 

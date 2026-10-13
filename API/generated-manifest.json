@@ -1,7 +1,7 @@
 {
   "inputs": {
     "API/generation.json": "d534d8920136a78492499860547b908e30479ee73c6a963b09dd56b2871742a7",
-    "API/openapi.yaml": "7bc3a8dcb982f7099939b04e68a845d262c1348888d71c2610bae4f1ab4b1de8",
+    "API/openapi.yaml": "b30a83aeef2b54387132d764aeb277e338144547003acc80df194536bd8c84a9",
     "Configuration/Package.resolved": "ba9c95e422d34408b2f72136545ccdeca581e507cb3ed3baed141acbb1afe4d2",
     "Packages/AppAutomation/Package.resolved": "b616c49d7edf238de640026f072560ecfc5f6924bfa710cfa736d81f6129e89c",
     "Packages/AppAutomation/Package.swift": "34ef708ad9c92093e253daf8740bcdd2bb6a1590240432f9c07d007af871debd",
@@ -24,16 +24,16 @@
     "scripts/prepare-xcode.sh": "fd7b4ecf81170352c383d9aa42b374561364be1da40794edd7561df499fb27ce"
   },
   "outputs": {
-    "Sources/CLI/Generated/Commands.swift": "a7d4a567f34fb6c684297405c4088f0d4a99025972bab00424d92745250ccb9b",
-    "Sources/Shared/API/Generated/AutomationCatalog.swift": "5d61fd6ce74d43acd056db8b337e18cacbfbf8ee0ef00f52f36ead244581bb27",
-    "Sources/Shared/API/Generated/AutomationOperations.swift": "39b4bcc21ba96136abf26882cce44e3cebc82765a93f36034ad6fa36c05033ef",
+    "Sources/CLI/Generated/Commands.swift": "9c7807a2c406edef994b894623c7d803b730a3ac58d5cf091967068fc1acfe92",
+    "Sources/Shared/API/Generated/AutomationCatalog.swift": "9d184965186214744de0ad94301f69c8c2100261618d698ede99a516353b2218",
+    "Sources/Shared/API/Generated/AutomationOperations.swift": "e861ded454e501276160e955b997ae98ce6d48f3ad6f6fb13ac69f85cf3df570",
     "Sources/Shared/API/Generated/Types+Components+Headers.swift": "b98a3f97c4cb97176fe979d198d2a3705972f99e4346887f0af4a266c6de8365",
     "Sources/Shared/API/Generated/Types+Components+Parameters.swift": "d595dcdbd4f83d327e4c2ac0afd0c24e1f480a8a51080b3317e3705ecfc805d4",
     "Sources/Shared/API/Generated/Types+Components+RequestBodies.swift": "00a9569f70ba89057fd5fd14b4ecbbad8a34d6941e8bb905c57dc198873116d5",
     "Sources/Shared/API/Generated/Types+Components+Responses.swift": "9398591b37a3141b09b726fcf5612eabf46e641bb56e0da6d7f0a098d307b348",
-    "Sources/Shared/API/Generated/Types+Components+Schemas.swift": "91a6a0101186a28cafcff063a4ac00c7d1d83fb0a99b6c662618dc0937a2b784",
+    "Sources/Shared/API/Generated/Types+Components+Schemas.swift": "dc406d98b6e1a6cf9730068bae0375283d8885879217bac09d2a8f3740ae72fc",
     "Sources/Shared/API/Generated/Types+Components.swift": "a823627f9eccdb71d20853743709c54609c76fe51096cd751aa2493f3f828a38",
-    "Sources/Shared/API/Generated/Types+Operations.swift": "91840354e9a1a86c793280d12c5bbe9937137a09e25dfcb7cd2e396bb9d12afa",
-    "Sources/Shared/API/Generated/Types.swift": "e230d677f689bfc20768d14c91c2155d138743a4fb3445b74130abbe10c5058c"
+    "Sources/Shared/API/Generated/Types+Operations.swift": "78d6710f1ebefa24eb6e05a945b2b82af7171fa574dcd2ebd1e75dd8975ac0db",
+    "Sources/Shared/API/Generated/Types.swift": "471e24238e352789623bdbf1ea8203ee5a1d8b6a2ecd3e1060eab31044c834f3"
   }
 }

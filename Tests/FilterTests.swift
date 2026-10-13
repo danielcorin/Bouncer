@@ -490,6 +490,88 @@ final class BrowserRestartTests: XCTestCase {
 }
 
 @MainActor
+final class DenialStatsTests: XCTestCase {
+    private var url: URL!
+
+    override func setUp() async throws {
+        url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("stats.json")
+    }
+
+    override func tearDown() async throws {
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    }
+
+    private func date(_ text: String) -> Date { ISO8601DateFormatter().date(from: text)! }
+
+    func testBurstsCountAsOneAttemptAndPauseStartsANewOne() {
+        let stats = DenialStatsStore(fileURL: url)
+        let start = Date()
+        for offset in [0.0, 0.2, 1.5, 9.0] { stats.record(site: "reddit.com", at: start.addingTimeInterval(offset)) }
+        stats.record(site: "reddit.com", at: start.addingTimeInterval(30))
+        let today = stats.day(DenialStatsStore.dayKey(for: start))
+        XCTAssertEqual(today.sites.first?.attempts, 2)
+        XCTAssertEqual(today.sites.first?.lookups, 5)
+    }
+
+    func testCountsArePerSitePerDayAndRanked() {
+        let stats = DenialStatsStore(fileURL: url)
+        let monday = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 12, hour: 23, minute: 59))!
+        let tuesday = monday.addingTimeInterval(120)
+        stats.record(site: "x.com", at: monday)
+        stats.record(site: "reddit.com", at: tuesday)
+        stats.record(site: "x.com", at: tuesday)
+        stats.record(site: "x.com", at: tuesday.addingTimeInterval(60))
+        XCTAssertEqual(stats.day("2026-10-12").attempts, 1)
+        XCTAssertEqual(stats.day("2026-10-13").ranked.map(\.site), ["x.com", "reddit.com"])
+        XCTAssertEqual(stats.totalAttempts, 4)
+        XCTAssertEqual(stats.days.map(\.date), ["2026-10-12", "2026-10-13"], "Oldest first")
+    }
+
+    func testPersistsAcrossLaunchesAndClears() {
+        let stats = DenialStatsStore(fileURL: url)
+        stats.record(site: "linkedin.com", at: Date())
+        stats.flush()
+        let reloaded = DenialStatsStore(fileURL: url)
+        XCTAssertEqual(reloaded.totalAttempts, 1)
+        reloaded.clear()
+        XCTAssertEqual(DenialStatsStore(fileURL: url).totalAttempts, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testRecentDaysIncludeEmptyDaysOldestFirst() {
+        let stats = DenialStatsStore(fileURL: url)
+        let end = Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 2, hour: 12))!
+        stats.record(site: "a.com", at: end)
+        let days = stats.recentDays(3, endingOn: end)
+        XCTAssertEqual(days.map(\.date), ["2026-02-28", "2026-03-01", "2026-03-02"])
+        XCTAssertEqual(days.map(\.attempts), [0, 0, 1])
+        XCTAssertNil(DenialStatsStore.date(forKey: "2026-02-30"), "Strict day keys")
+    }
+
+    func testSiteNamesFollowTheRule() {
+        let domainRule = FilterRule(pattern: "*.linkedin.com", kind: .domain)
+        XCTAssertEqual(DenialSite.name(for: "merchantpool1.linkedin.com", rule: domainRule), "linkedin.com")
+        let regex = FilterRule(pattern: "tiktok|instagram", kind: .regex)
+        XCTAssertEqual(DenialSite.name(for: "scontent.cdninstagram.com", rule: regex), "cdninstagram.com")
+        XCTAssertEqual(DenialSite.name(for: "www.bbc.co.uk", rule: regex), "bbc.co.uk")
+        XCTAssertEqual(DenialSite.name(for: "x.com", rule: nil), "x.com")
+    }
+
+    func testBlockedLookupsFeedStats() async throws {
+        let backend = InMemoryFilterBackend()
+        let store = BlockingStore(rulesURL: url.deletingLastPathComponent().appendingPathComponent("rules.json"), backend: backend)
+        _ = try await store.addRule(pattern: "linkedin.com", kind: nil, action: nil)
+        try await store.setEnabled(true)
+        backend.simulateLookup("www.linkedin.com")
+        backend.simulateLookup("merchantpool1.linkedin.com")
+        let today = store.stats.day(DenialStatsStore.dayKey(for: Date()))
+        XCTAssertEqual(today.sites.map(\.site), ["linkedin.com"])
+        XCTAssertEqual(today.sites.first?.attempts, 1)
+        XCTAssertEqual(today.sites.first?.lookups, 2)
+    }
+}
+
+@MainActor
 final class TestShell: AppShell {
     var confirmAnswer = false
     private(set) var prompts: [BrowserInfo] = []

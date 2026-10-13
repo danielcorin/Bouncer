@@ -29,6 +29,8 @@ public protocol BlockingStoreReadAccess: ObservableObject {
     var blocks: AnyPublisher<ActivityEntry, Never> { get }
     static var defaultRulesURL: URL { get }
     static var bypassWarning: String { get }
+    /// Per-day, per-site denial counts.
+    var stats: DenialStatsStore { get }
     func evaluate(_ domain: String) -> FilterDecision
     /// Re-reads tunnel installation and connection state.
     func refreshTunnel()
@@ -47,6 +49,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
     @Published public private(set) var dnsVerified: Bool?
     @Published public private(set) var activity: [ActivityEntry] = []
     @Published public private(set) var blockedCount = 0
+    public let stats: DenialStatsStore
     public var blocks: AnyPublisher<ActivityEntry, Never> { blockSubject.eraseToAnyPublisher() }
 
     static let activityLimit = 100
@@ -65,8 +68,11 @@ public final class BlockingStore: BlockingStoreReadAccess {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Bouncer/rules.json")
     }
 
-    public init(rulesURL: URL = BlockingStore.defaultRulesURL, backend: FilterBackend, options: FilterOptions = .init()) {
+    public init(rulesURL: URL = BlockingStore.defaultRulesURL, backend: FilterBackend, options: FilterOptions = .init(),
+                stats: DenialStatsStore? = nil) {
         self.rulesURL = rulesURL
+        // Keep stats beside the rules file (an isolated fixture gets its own).
+        self.stats = stats ?? DenialStatsStore(fileURL: rulesURL.deletingLastPathComponent().appendingPathComponent("stats.json"))
         self.backend = backend
         self.options = options
         tunnel = backend.installation
@@ -279,11 +285,14 @@ public final class BlockingStore: BlockingStoreReadAccess {
         activity.insert(entry, at: 0)
         if activity.count > Self.activityLimit { activity.removeLast(activity.count - Self.activityLimit) }
         blockSubject.send(entry)
+        let rule = rules.first { $0.id == lookup.ruleID }
+        stats.record(site: DenialSite.name(for: lookup.domain, rule: rule), at: lookup.date)
     }
 
     /// Called as the app terminates; blocks must never outlive Bouncer.
     func shutdown() {
         verification?.cancel()
+        stats.flush()
         if phase != .off || backend.isConnected { backend.deactivateBeforeExit(timeout: 3) }
         isEnabled = false
         phase = .off

@@ -220,6 +220,32 @@ enum GeneratedCLI {
             try await CLIEnvironment.current.run(APIOperations.Show.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
         }
     }
+    struct StatsClear: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(commandName: "clear", abstract: "Delete all recorded stats")
+        @Flag(name: .customLong("force"), help: "Confirm this destructive operation.") var value_force = false
+        @Flag(help: "Emit a structured JSON result.") var json = false
+        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
+        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
+        mutating func run() async throws {
+            var values: [String: String] = [:]
+            if value_force { values["force"] = "true" }
+            try await CLIEnvironment.current.run(APIOperations.StatsClear.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
+        }
+    }
+    struct StatsShow: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(commandName: "show", abstract: "Denied attempts per day and site")
+        @Option(name: .customLong("date"), help: "One day, YYYY-MM-DD. Overrides --days.") var value_date: String?
+        @Option(name: .customLong("days"), help: "How many recent days, 1-366 (default 7).") var value_days: String?
+        @Flag(help: "Emit a structured JSON result.") var json = false
+        @Option(name: .customLong("input-file"), help: "Complete input JSON file; \'-\' reads stdin. Cannot combine with field flags.") var inputFile: String?
+        @Option(help: "Set a nullable field to null. Repeat for multiple fields.") var clear: [String] = []
+        mutating func run() async throws {
+            var values: [String: String] = [:]
+            values["date"] = value_date
+            values["days"] = value_days
+            try await CLIEnvironment.current.run(APIOperations.StatsShow.self, values: values, clear: clear, inputFile: inputFile, json: json, uploadFile: nil, outputFile: nil, overwrite: false)
+        }
+    }
     struct Status: AsyncParsableCommand {
         static let configuration = CommandConfiguration(commandName: "status", abstract: "Status")
         @Flag(help: "Emit a structured JSON result.") var json = false
@@ -275,6 +301,12 @@ enum GeneratedCLI {
             CLIEnvironment.current.command(APIOperations.RuleUpdate.self, default: RuleUpdate.self)
         ]) }
     }
+    struct StatsGroup: AsyncParsableCommand {
+        static var configuration: CommandConfiguration { .init(commandName: "stats", subcommands: [
+            CLIEnvironment.current.command(APIOperations.StatsClear.self, default: StatsClear.self),
+            CLIEnvironment.current.command(APIOperations.StatsShow.self, default: StatsShow.self)
+        ]) }
+    }
     struct TunnelGroup: AsyncParsableCommand {
         static var configuration: CommandConfiguration { .init(commandName: "tunnel", subcommands: [
             CLIEnvironment.current.command(APIOperations.TunnelInstall.self, default: TunnelInstall.self),
@@ -293,6 +325,7 @@ enum GeneratedCLI {
         BrowserGroup.self,
         ConfigGroup.self,
         RulesGroup.self,
+        StatsGroup.self,
         TunnelGroup.self
     ] }
 }
