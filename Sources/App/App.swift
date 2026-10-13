@@ -115,7 +115,39 @@ final class AppRuntime {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        MainActor.assumeIsolated { AppRuntime.shared.start() }
+        MainActor.assumeIsolated {
+            NSApp.mainMenu = Self.makeMainMenu()
+            AppRuntime.shared.start()
+        }
+    }
+
+    /// Never shown (no menu bar of our own as an accessory app), but it supplies
+    /// key equivalents while the popover or Settings is focused: ⌘Q, ⌘,, ⌘W, and
+    /// the Edit shortcuts that text fields rely on.
+    @MainActor private static func makeMainMenu() -> NSMenu {
+        let main = NSMenu()
+        let app = NSMenu(title: "Bouncer")
+        app.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettings(_:)), keyEquivalent: ",")
+        app.addItem(.separator())
+        app.addItem(withTitle: "Quit Bouncer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let edit = NSMenu(title: "Edit")
+        edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        let window = NSMenu(title: "Window")
+        window.addItem(withTitle: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        for submenu in [app, edit, window] {
+            main.addItem(withTitle: submenu.title, action: nil, keyEquivalent: "").submenu = submenu
+        }
+        return main
+    }
+
+    @objc func showSettings(_ sender: Any?) {
+        MainActor.assumeIsolated { AppRuntime.shared.showSettings() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

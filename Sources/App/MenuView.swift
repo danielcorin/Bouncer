@@ -203,7 +203,7 @@ struct MenuView: View {
         HStack {
             Button("Settings…", action: openSettings)
             Spacer()
-            Button("Quit Bouncer", action: quit)
+            Button("Quit Bouncer  ⌘Q", action: quit)
                 .help("Quitting removes all blocks")
         }
         .controlSize(.small)
