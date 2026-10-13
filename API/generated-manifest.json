@@ -1,7 +1,7 @@
 {
   "inputs": {
     "API/generation.json": "d534d8920136a78492499860547b908e30479ee73c6a963b09dd56b2871742a7",
-    "API/openapi.yaml": "4dbbea5a60c2dfbab46de2d3c8d47ecc949c06901b3ef18ddd0d687008741792",
+    "API/openapi.yaml": "ca9a983b08f0425c54c7ffa88275ac4bd7e54cb2c9236d7bb1dff6b1516974b9",
     "Configuration/Package.resolved": "a1e5bad3f65098185bf6da5f10596b0b8d343483906817479048151fd9c3ce2b",
     "Packages/AppAutomation/Package.resolved": "b616c49d7edf238de640026f072560ecfc5f6924bfa710cfa736d81f6129e89c",
     "Packages/AppAutomation/Package.swift": "34ef708ad9c92093e253daf8740bcdd2bb6a1590240432f9c07d007af871debd",
@@ -25,13 +25,13 @@
   },
   "outputs": {
     "Sources/CLI/Generated/Commands.swift": "6402d4faf6830e2572a4d6ec52f06a6f4c7ccf73a32a0077372b476bf2561c81",
-    "Sources/Shared/API/Generated/AutomationCatalog.swift": "a3d2b96d2bc7bcea98a89178f0dce946c2533f585e6e1a1e54de77f771d925b2",
+    "Sources/Shared/API/Generated/AutomationCatalog.swift": "a026460f14958c3adf916ebeeb5a8d0c2d66aaed67d2be68ff3bcdc06e313922",
     "Sources/Shared/API/Generated/AutomationOperations.swift": "874bdd10fc4d18388cd65caf2db26568a3b6c79d8ba725165d595085e6c6dcdd",
     "Sources/Shared/API/Generated/Types+Components+Headers.swift": "b98a3f97c4cb97176fe979d198d2a3705972f99e4346887f0af4a266c6de8365",
     "Sources/Shared/API/Generated/Types+Components+Parameters.swift": "d595dcdbd4f83d327e4c2ac0afd0c24e1f480a8a51080b3317e3705ecfc805d4",
     "Sources/Shared/API/Generated/Types+Components+RequestBodies.swift": "00a9569f70ba89057fd5fd14b4ecbbad8a34d6941e8bb905c57dc198873116d5",
     "Sources/Shared/API/Generated/Types+Components+Responses.swift": "9398591b37a3141b09b726fcf5612eabf46e641bb56e0da6d7f0a098d307b348",
-    "Sources/Shared/API/Generated/Types+Components+Schemas.swift": "622f41d5b48384a50a1ec6a833acc6c140297075f54b1ec78fc0ef6036e29d3b",
+    "Sources/Shared/API/Generated/Types+Components+Schemas.swift": "a6f29e7bcc5a60bbf593dfbbf1e0f76e75a9b0fa651a73f34da07256230eceed",
     "Sources/Shared/API/Generated/Types+Components.swift": "a823627f9eccdb71d20853743709c54609c76fe51096cd751aa2493f3f828a38",
     "Sources/Shared/API/Generated/Types+Operations.swift": "11e2c0d38825939040ac0a5a32365744d4fc38f73bce28d8ba502442e00689b0",
     "Sources/Shared/API/Generated/Types.swift": "2af7a53f5746db84ca8ee6470c02649ed81cc58ed8bcfd4e58dfc885771485e7"

@@ -88,9 +88,18 @@ filters DNS itself:
 
 - Sites already open may keep working until the browser reconnects: existing
   connections don't do new DNS lookups. Reload, or restart the browser.
+- **iCloud Private Relay bypasses Bouncer.** While Private Relay is on, macOS sends
+  every app's DNS through Apple's encrypted relay and ignores the configured DNS
+  server. The canary answer only matters when Private Relay re-evaluates a network
+  (e.g. on joining it), so in practice turn Private Relay off for the networks where
+  you want blocking: System Settings › Wi-Fi › Details… › iCloud Private Relay.
+  Bouncer detects this: after turning on, it resolves a self-test name
+  (`<nonce>.selftest.bouncer.internal`) through the system resolver, and if the answer
+  didn't come from its filter, the menu shows **Bypassed** with an orange warning and
+  `bouncer status` reports `BYPASSED` (`dnsVerified: false` in JSON).
 - Browsers with a hard-coded DNS-over-HTTPS provider (Chrome/Edge "Secure DNS"
   set to a specific provider, Firefox "Max Protection") bypass system DNS. Firefox's
-  default mode and iCloud Private Relay are handled by the canary setting above.
+  default mode is handled by the canary setting above.
 - VPNs that push their own DNS resolvers can take precedence over Bouncer.
 - Verify while blocking with `scutil --dns | grep nameserver` (expect `127.0.0.1`).
 - Helper logs: `/var/log/llc.wvlen.Bouncer.helper.log`.

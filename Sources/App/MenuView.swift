@@ -22,7 +22,7 @@ struct MenuView: View {
             if let message = store.message ?? error {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(store.phase == .failed || error != nil ? .red : .secondary)
+                    .foregroundStyle(store.phase == .failed || error != nil ? .red : store.dnsVerified == false ? .orange : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
@@ -64,6 +64,7 @@ struct MenuView: View {
 
     private var summary: String {
         let state = switch store.phase {
+        case .on where store.dnsVerified == false: "Bypassed"
         case .on: "Blocking"
         case .starting: "Starting…"
         case .stopping: "Stopping…"

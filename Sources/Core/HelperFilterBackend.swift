@@ -130,6 +130,28 @@ public final class HelperFilterBackend: FilterBackend {
         connection = nil
     }
 
+    public func verifySystemResolution() async -> Bool {
+        let name = UUID().uuidString.prefix(8).lowercased() + "." + HelperConstants.selfTestSuffix
+        let expected = HelperConstants.selfTestAddress.map(String.init).joined(separator: ".")
+        return await Task.detached {
+            var hints = addrinfo()
+            hints.ai_family = AF_INET
+            hints.ai_socktype = SOCK_STREAM
+            var result: UnsafeMutablePointer<addrinfo>?
+            guard getaddrinfo(name, nil, &hints, &result) == 0, let first = result else { return false }
+            defer { freeaddrinfo(first) }
+            var cursor: UnsafeMutablePointer<addrinfo>? = first
+            while let entry = cursor {
+                if let address = entry.pointee.ai_addr, address.pointee.sa_family == sa_family_t(AF_INET) {
+                    let ipv4 = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr }
+                    if String(cString: inet_ntoa(ipv4)) == expected { return true }
+                }
+                cursor = entry.pointee.ai_next
+            }
+            return false
+        }.value
+    }
+
     @discardableResult
     private func send(_ request: HelperRequest) async throws -> HelperFilterStatus {
         let connection = try openConnection()

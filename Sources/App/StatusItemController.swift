@@ -41,7 +41,7 @@ final class StatusItemController: NSObject {
             button.toolTip = "Bouncer — Option-click to toggle blocking"
         }
 
-        store.$phase.combineLatest(store.$isEnabled)
+        store.$phase.combineLatest(store.$isEnabled, store.$dnsVerified)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.refreshIcon() }
             .store(in: &cancellables)
@@ -102,6 +102,7 @@ final class StatusItemController: NSObject {
         guard !flashing, let button = item.button else { return }
         let symbol: String
         switch store.phase {
+        case .on where store.dnsVerified == false: symbol = "exclamationmark.shield.fill"
         case .on: symbol = "shield.fill"
         case .starting, .stopping: symbol = "shield.lefthalf.filled"
         case .failed: symbol = "exclamationmark.shield"

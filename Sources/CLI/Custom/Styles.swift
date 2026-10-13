@@ -33,7 +33,8 @@ enum BouncerCLIStyles {
     }
 
     static func blocking(_ state: APIData.BlockingState) -> String {
-        var lines = ["Blocking: \(state.phase.rawValue)\(state.enabled && state.phase != .on ? " (requested on)" : "")",
+        let verified = state.dnsVerified.map { $0 ? ", verified" : ", BYPASSED" } ?? ""
+        var lines = ["Blocking: \(state.phase.rawValue)\(state.enabled && state.phase != .on ? " (requested on)" : "")\(verified)",
                      "Rules: \(state.ruleCount) · blocked lookups since launch: \(state.blockedCount)",
                      "Hotkey: \(HotkeyChord(state.hotkey)?.displayString ?? "none")",
                      "Helper: \(state.helper.installed ? (state.helper.upToDate ? "installed" : "installed, update pending") : "not installed")\(state.helper.connected ? ", connected" : "")"]

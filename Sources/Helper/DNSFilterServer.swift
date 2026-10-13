@@ -100,7 +100,7 @@ final class DNSFilterServer: @unchecked Sendable {
 
     // MARK: - Decisions
 
-    private enum Verdict { case forward, blocked(FilterRule?) }
+    private enum Verdict { case forward, blocked(FilterRule?), selfTest }
 
     private func verdict(for packet: [UInt8]) -> (Verdict, DNSQuestion?) {
         guard let question = DNSPacket.parseQuestion(packet) else { return (.forward, nil) }
@@ -108,6 +108,7 @@ final class DNSFilterServer: @unchecked Sendable {
             _queries += 1
             return (_matcher, _blockCanaries)
         }
+        if question.name.hasSuffix("." + HelperConstants.selfTestSuffix) { return (.selfTest, question) }
         if canaries && Self.canaryDomains.contains(question.name) { return (.blocked(nil), question) }
         if case .blocked(let rule) = matcher.evaluate(question.name) {
             lock.withLock { _blocked += 1 }
@@ -123,6 +124,8 @@ final class DNSFilterServer: @unchecked Sendable {
         switch verdict {
         case .blocked:
             reply(DNSPacket.blockedResponse(to: packet, question: question!))
+        case .selfTest:
+            reply(DNSPacket.addressResponse(to: packet, question: question!, ipv4: HelperConstants.selfTestAddress))
         case .forward:
             upstream.forward(packet, tcp: tcp) { response in
                 if let response { reply(response) }

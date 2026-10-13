@@ -115,7 +115,7 @@ public final class BouncerService: ApplicationOperations {
         store.refreshHelper()
         return .init(enabled: store.isEnabled, phase: .init(rawValue: store.phase.rawValue) ?? .off, message: store.message,
                      helper: .init(installed: store.helper.installed, upToDate: store.helper.upToDate, connected: store.helperConnected),
-                     ruleCount: store.rules.count, blockedCount: store.blockedCount, hotkey: hotkey)
+                     ruleCount: store.rules.count, blockedCount: store.blockedCount, hotkey: hotkey, dnsVerified: store.dnsVerified)
     }
 
     static func wire(_ rule: FilterRule) -> APIData.Rule {

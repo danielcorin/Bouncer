@@ -1317,6 +1317,10 @@
           },
           "hotkey": {
             "type": "string"
+          },
+          "dnsVerified": {
+            "type": "boolean",
+            "description": "While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown."
           }
         },
         "required": [

@@ -22,10 +22,13 @@ public protocol BlockingStoreReadAccess: ObservableObject {
     var message: String? { get }
     var helper: HelperInstallation { get }
     var helperConnected: Bool { get }
+    /// nil until checked; false means lookups bypass the filter (e.g. iCloud Private Relay).
+    var dnsVerified: Bool? { get }
     var activity: [ActivityEntry] { get }
     var blockedCount: Int { get }
     var blocks: AnyPublisher<ActivityEntry, Never> { get }
     static var defaultRulesURL: URL { get }
+    static var bypassWarning: String { get }
     func evaluate(_ domain: String) -> FilterDecision
     /// Re-reads helper installation and connection state.
     func refreshHelper()
@@ -41,6 +44,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
     @Published public private(set) var message: String?
     @Published public private(set) var helper: HelperInstallation
     @Published public private(set) var helperConnected = false
+    @Published public private(set) var dnsVerified: Bool?
     @Published public private(set) var activity: [ActivityEntry] = []
     @Published public private(set) var blockedCount = 0
     public var blocks: AnyPublisher<ActivityEntry, Never> { blockSubject.eraseToAnyPublisher() }
@@ -53,6 +57,10 @@ public final class BlockingStore: BlockingStoreReadAccess {
     private(set) var options: FilterOptions
     private var reconnectTask: Task<Void, Never>?
     private var transition: Task<Void, Error>?
+    private var verification: Task<Void, Never>?
+    /// Delays before each self-test attempt; DNS configuration changes apply asynchronously.
+    var verificationDelays: [Duration] = [.milliseconds(800), .seconds(1), .seconds(2)]
+    nonisolated public static let bypassWarning = "Blocks are being bypassed: macOS isn't sending DNS lookups to Bouncer. This is usually iCloud Private Relay — turn it off for this network in System Settings › Wi-Fi › Details… › iCloud Private Relay, then turn blocking off and on."
 
     nonisolated public static var defaultRulesURL: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Bouncer/rules.json")
@@ -98,6 +106,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
                 try await ensureHelper()
                 try await backend.activate(rules: rules, options: options)
                 phase = .on
+                verifyResolution()
             } catch {
                 isEnabled = false
                 phase = .failed
@@ -107,6 +116,9 @@ public final class BlockingStore: BlockingStoreReadAccess {
             }
         } else {
             isEnabled = false
+            verification?.cancel()
+            dnsVerified = nil
+            if message == Self.bypassWarning { message = nil }
             guard phase != .off else { return }
             phase = .stopping
             do { try await backend.deactivate() } catch { message = error.localizedDescription }
@@ -168,6 +180,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
                     self.phase = .on
                     self.message = nil
                     self.refreshHelper()
+                    self.verifyResolution()
                     return
                 } catch {
                     self.message = "\(reason) \(error.localizedDescription)"
@@ -177,6 +190,28 @@ public final class BlockingStore: BlockingStoreReadAccess {
             self.isEnabled = false
             self.phase = .failed
             self.refreshHelper()
+        }
+    }
+
+    /// Proves end to end that the system resolver reaches the filter.
+    func verifyResolution() {
+        verification?.cancel()
+        dnsVerified = nil
+        verification = Task { @MainActor [weak self] in
+            guard let delays = self?.verificationDelays else { return }
+            for delay in delays {
+                try? await Task.sleep(for: delay)
+                guard let self, !Task.isCancelled, self.phase == .on else { return }
+                if await self.backend.verifySystemResolution() {
+                    guard !Task.isCancelled else { return }
+                    self.dnsVerified = true
+                    if self.message == Self.bypassWarning { self.message = nil }
+                    return
+                }
+            }
+            guard let self, !Task.isCancelled, self.phase == .on else { return }
+            self.dnsVerified = false
+            self.message = Self.bypassWarning
         }
     }
 
@@ -268,6 +303,7 @@ public final class BlockingStore: BlockingStoreReadAccess {
     /// Called as the app terminates; blocks must never outlive Bouncer.
     func shutdown() {
         reconnectTask?.cancel()
+        verification?.cancel()
         if phase != .off || backend.isConnected { backend.deactivateBeforeExit(timeout: 3) }
         isEnabled = false
         phase = .off

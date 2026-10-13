@@ -16,6 +16,8 @@ final class InMemoryFilterBackend: FilterBackend {
     private(set) var installCount = 0
     private(set) var exitTeardowns = 0
     var installFailure: FilterBackendError?
+    /// False simulates a bypass such as iCloud Private Relay.
+    var systemResolutionReachesFilter = true
     var activateFailure: FilterBackendError?
     /// Looked up once on each activation, like a browser tab reloading.
     var probes: [String]
@@ -58,6 +60,8 @@ final class InMemoryFilterBackend: FilterBackend {
         activeRules = nil
         isConnected = false
     }
+
+    func verifySystemResolution() async -> Bool { isActive && systemResolutionReachesFilter }
 
     func simulateLookup(_ domain: String) {
         guard let activeRules, case .blocked(let rule) = RuleMatcher(rules: activeRules).evaluate(domain) else { return }

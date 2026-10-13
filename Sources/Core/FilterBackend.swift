@@ -28,6 +28,9 @@ public protocol FilterBackend: AnyObject {
     /// Best-effort teardown while the app terminates; the helper also removes
     /// blocks on its own when this process's connection closes.
     func deactivateBeforeExit(timeout: TimeInterval)
+    /// Resolves a self-test name through the normal system resolver; true when the
+    /// answer came from Bouncer's filter rather than a bypass such as Private Relay.
+    func verifySystemResolution() async -> Bool
 }
 
 public struct FilterBackendError: LocalizedError, Sendable {

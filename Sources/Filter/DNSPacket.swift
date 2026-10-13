@@ -59,6 +59,18 @@ public enum DNSPacket {
         return response
     }
 
+    /// A positive, uncacheable answer: an A record for A queries, NODATA otherwise.
+    public static func addressResponse(to query: [UInt8], question: DNSQuestion, ipv4: [UInt8]) -> [UInt8] {
+        let answers: UInt8 = question.type == 1 ? 1 : 0
+        var response = header(for: query, rcode: 0, authorityCount: 0)
+        response[7] = answers
+        response += query[headerLength..<question.questionEnd]
+        if answers == 1 {
+            response += [0xC0, 0x0C, 0x00, 0x01, 0x00, 0x01, 0, 0, 0, 0, 0x00, 0x04] + ipv4
+        }
+        return response
+    }
+
     /// SERVFAIL when no upstream answered, so clients fail fast instead of timing out.
     public static func failureResponse(to query: [UInt8], question: DNSQuestion) -> [UInt8] {
         header(for: query, rcode: 2, authorityCount: 0) + query[headerLength..<question.questionEnd]

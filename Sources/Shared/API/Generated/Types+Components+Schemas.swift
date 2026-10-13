@@ -824,6 +824,10 @@ extension Components {
             public var blockedCount: Swift.Int
             /// - Remark: Generated from `#/components/schemas/BlockingState/hotkey`.
             public var hotkey: Swift.String
+            /// While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown.
+            ///
+            /// - Remark: Generated from `#/components/schemas/BlockingState/dnsVerified`.
+            public var dnsVerified: Swift.Bool?
             /// Creates a new `BlockingState`.
             ///
             /// - Parameters:
@@ -834,6 +838,7 @@ extension Components {
             ///   - ruleCount:
             ///   - blockedCount: Blocked lookups since launch.
             ///   - hotkey:
+            ///   - dnsVerified: While on: whether a test lookup through the system resolver reached Bouncer. False means something (usually iCloud Private Relay) bypasses the blocks. Absent while unknown.
             public init(
                 enabled: Swift.Bool,
                 phase: Components.Schemas.BlockingState.phasePayload,
@@ -841,7 +846,8 @@ extension Components {
                 helper: Components.Schemas.HelperStatus,
                 ruleCount: Swift.Int,
                 blockedCount: Swift.Int,
-                hotkey: Swift.String
+                hotkey: Swift.String,
+                dnsVerified: Swift.Bool? = nil
             ) {
                 self.enabled = enabled
                 self.phase = phase
@@ -850,6 +856,7 @@ extension Components {
                 self.ruleCount = ruleCount
                 self.blockedCount = blockedCount
                 self.hotkey = hotkey
+                self.dnsVerified = dnsVerified
             }
             public enum CodingKeys: String, CodingKey {
                 case enabled
@@ -859,6 +866,7 @@ extension Components {
                 case ruleCount
                 case blockedCount
                 case hotkey
+                case dnsVerified
             }
             public init(from decoder: any Swift.Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -890,6 +898,10 @@ extension Components {
                     Swift.String.self,
                     forKey: .hotkey
                 )
+                self.dnsVerified = try container.decodeIfPresent(
+                    Swift.Bool.self,
+                    forKey: .dnsVerified
+                )
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "enabled",
                     "phase",
@@ -897,7 +909,8 @@ extension Components {
                     "helper",
                     "ruleCount",
                     "blockedCount",
-                    "hotkey"
+                    "hotkey",
+                    "dnsVerified"
                 ])
             }
         }

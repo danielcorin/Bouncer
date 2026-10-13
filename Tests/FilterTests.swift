@@ -104,6 +104,18 @@ final class DNSPacketTests: XCTestCase {
         XCTAssertEqual(Array(soa.suffix(4)), [0, 0, 0, 0], "Zero negative-cache minimum")
     }
 
+    func testSelfTestAnswerIsAnUncacheableARecord() throws {
+        let question = try XCTUnwrap(DNSPacket.parseQuestion(query))
+        let response = DNSPacket.addressResponse(to: query, question: question, ipv4: [127, 0, 0, 53])
+        XCTAssertEqual(DNSPacket.responseCode(response), 0)
+        XCTAssertEqual(Array(response[6..<8]), [0, 1], "One answer")
+        XCTAssertEqual(Array(response.suffix(16)), [0xC0, 0x0C, 0, 1, 0, 1, 0, 0, 0, 0, 0, 4, 127, 0, 0, 53])
+        var aaaa = query
+        aaaa[30] = 28
+        let nodata = DNSPacket.addressResponse(to: aaaa, question: try XCTUnwrap(DNSPacket.parseQuestion(aaaa)), ipv4: [127, 0, 0, 53])
+        XCTAssertEqual(Array(nodata[6..<8]), [0, 0], "AAAA gets NODATA")
+    }
+
     func testFailureResponseIsServfail() throws {
         let question = try XCTUnwrap(DNSPacket.parseQuestion(query))
         let response = DNSPacket.failureResponse(to: query, question: question)
@@ -210,6 +222,26 @@ final class BlockingStoreTests: XCTestCase {
         for _ in 0..<40 where store.phase != .on { try await Task.sleep(for: .milliseconds(50)) }
         XCTAssertEqual(store.phase, .on)
         XCTAssertTrue(backend.isActive)
+    }
+
+    func testDetectsWhenSystemLookupsBypassTheFilter() async throws {
+        let backend = InMemoryFilterBackend()
+        backend.systemResolutionReachesFilter = false
+        let store = makeStore(backend)
+        store.verificationDelays = [.milliseconds(10), .milliseconds(10)]
+        try await store.setEnabled(true)
+        for _ in 0..<40 where store.dnsVerified == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(store.dnsVerified, false)
+        XCTAssertEqual(store.message, BlockingStore.bypassWarning)
+        try await store.setEnabled(false)
+        XCTAssertNil(store.dnsVerified)
+        XCTAssertNil(store.message, "Turning off clears the warning")
+
+        backend.systemResolutionReachesFilter = true
+        try await store.setEnabled(true)
+        for _ in 0..<40 where store.dnsVerified == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(store.dnsVerified, true)
+        XCTAssertNil(store.message)
     }
 
     func testDisconnectWhileOffDoesNothing() async throws {

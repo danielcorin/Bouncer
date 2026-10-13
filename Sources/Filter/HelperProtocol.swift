@@ -11,6 +11,10 @@ public enum HelperConstants {
     public static let stateDirectory = "/Library/Application Support/Bouncer"
     public static let bundledHelperName = "BouncerHelper"
     public static let protocolVersion = 1
+    /// While blocking, the helper answers `<nonce>.` + this suffix with `selfTestAddress`,
+    /// so the app can prove the system resolver really goes through Bouncer.
+    public static let selfTestSuffix = "selftest.bouncer.internal"
+    public static let selfTestAddress: [UInt8] = [127, 0, 0, 53]
     public static let maxMessageBytes = 4 << 20
 }
 
