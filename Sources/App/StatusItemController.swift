@@ -63,8 +63,8 @@ final class StatusItemController: NSObject {
     @objc private func clicked(_ sender: NSStatusBarButton) {
         if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
             Task {
-                let state = try? await service.blockingToggle(.init())
-                announce(state?.enabled == true ? "Blocking on" : "Blocking off", failed: state == nil)
+                do { _ = try await service.blockingToggle(.init()) }
+                catch { announceFailure() }
             }
             return
         }
@@ -78,10 +78,10 @@ final class StatusItemController: NSObject {
         popover.contentViewController?.view.window?.makeKey()
     }
 
-    /// Short confirmation after a hotkey or option-click toggle.
-    func announce(_ text: String, failed: Bool = false) {
-        let symbol = failed ? "exclamationmark.shield.fill" : (store.isEnabled ? "shield.fill" : "shield")
-        flash(text: text, symbol: symbol, color: failed ? .systemOrange : nil, duration: 1.4)
+    /// Brief warning when a hotkey or option-click toggle fails. Successful
+    /// toggles show nothing extra; the icon simply changes.
+    func announceFailure() {
+        flash(text: "Couldn't toggle", symbol: "exclamationmark.shield.fill", color: .systemOrange, duration: 1.4)
     }
 
     private func flash(text: String, symbol: String, color: NSColor?, duration: TimeInterval = 2.5) {

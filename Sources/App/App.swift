@@ -99,12 +99,9 @@ final class AppRuntime {
 
     private func toggleFromHotkey() {
         Task {
-            do {
-                let state = try await service.blockingToggle(.init())
-                statusItem?.announce(state.enabled ? "Blocking on" : "Blocking off")
-            } catch {
-                statusItem?.announce("Couldn't toggle", failed: true)
-            }
+            // Success needs no announcement: the icon itself switches state.
+            do { _ = try await service.blockingToggle(.init()) }
+            catch { statusItem?.announceFailure() }
         }
     }
 
