@@ -16,7 +16,8 @@ final class StatusItemController: NSObject {
     private var flashTask: Task<Void, Never>?
     private var flashing = false
 
-    init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel, openSettings: @escaping () -> Void) {
+    init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel,
+         openSettings: @escaping () -> Void, openAbout: @escaping () -> Void) {
         self.store = store
         self.service = service
         self.configuration = configuration
@@ -24,12 +25,16 @@ final class StatusItemController: NSObject {
 
         popover.behavior = .transient
         popover.animates = true
-        let hosting = NSHostingController(rootView: MenuView(store: store, service: service, configuration: configuration) { [weak self] in
-            self?.popover.performClose(nil)
-            openSettings()
-        } quit: {
-            NSApp.terminate(nil)
-        })
+        let hosting = NSHostingController(rootView: MenuView(store: store, service: service, configuration: configuration,
+            openSettings: { [weak self] in
+                self?.popover.performClose(nil)
+                openSettings()
+            },
+            openAbout: { [weak self] in
+                self?.popover.performClose(nil)
+                openAbout()
+            },
+            quit: { NSApp.terminate(nil) }))
         hosting.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hosting
 

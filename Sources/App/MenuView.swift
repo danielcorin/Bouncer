@@ -6,6 +6,7 @@ struct MenuView: View {
     let service: BouncerService
     @ObservedObject var configuration: AppConfigurationModel
     let openSettings: () -> Void
+    let openAbout: () -> Void
     let quit: () -> Void
 
     @State private var draft = ""
@@ -203,6 +204,8 @@ struct MenuView: View {
     private var footer: some View {
         HStack {
             Button("Settings…", action: openSettings)
+            Button(action: openAbout) { Image(systemName: "info.circle") }
+                .help("About Bouncer")
             Spacer()
             Button("Quit Bouncer  ⌘Q", action: quit)
                 .help("Quitting removes all blocks")

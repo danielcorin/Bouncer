@@ -37,6 +37,7 @@ final class AppRuntime {
     private var server: AutomationSocketServer?
     private var statusItem: StatusItemController?
     private var settingsWindow: SettingsWindowController?
+    private var aboutWindow: AboutWindowController?
     private var cancellables: Set<AnyCancellable> = []
 
     private lazy var host = AutomationHost(
@@ -57,9 +58,9 @@ final class AppRuntime {
 
     func start() {
         configurationModel.start()
-        let statusItem = StatusItemController(store: store, service: service, configuration: configurationModel) { [weak self] in
-            self?.showSettings()
-        }
+        let statusItem = StatusItemController(store: store, service: service, configuration: configurationModel,
+                                              openSettings: { [weak self] in self?.showSettings() },
+                                              openAbout: { [weak self] in self?.showAbout() })
         self.statusItem = statusItem
         shell.onShow = { [weak statusItem] in statusItem?.showPopover() }
 
@@ -109,9 +110,21 @@ final class AppRuntime {
 
     func showSettings() {
         if settingsWindow == nil {
-            settingsWindow = SettingsWindowController(store: store, service: service, configuration: configurationModel)
+            settingsWindow = SettingsWindowController(store: store, service: service, configuration: configurationModel) { [weak self] in
+                self?.showAbout()
+            }
         }
         settingsWindow?.present()
+    }
+
+    func showAbout() {
+        if aboutWindow == nil {
+            aboutWindow = AboutWindowController(configuration: configurationModel) { [weak self] in
+                self?.aboutWindow?.close()
+                self?.showSettings()
+            }
+        }
+        aboutWindow?.present()
     }
 }
 
@@ -129,6 +142,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor private static func makeMainMenu() -> NSMenu {
         let main = NSMenu()
         let app = NSMenu(title: "Bouncer")
+        app.addItem(withTitle: "About Bouncer", action: #selector(AppDelegate.showAbout(_:)), keyEquivalent: "")
+        app.addItem(.separator())
         app.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettings(_:)), keyEquivalent: ",")
         app.addItem(.separator())
         app.addItem(withTitle: "Quit Bouncer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -150,6 +165,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings(_ sender: Any?) {
         MainActor.assumeIsolated { AppRuntime.shared.showSettings() }
+    }
+
+    @objc func showAbout(_ sender: Any?) {
+        MainActor.assumeIsolated { AppRuntime.shared.showAbout() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

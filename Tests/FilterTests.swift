@@ -312,10 +312,12 @@ final class BlockingStoreTests: XCTestCase {
     func testRapidTogglesSettleInOrder() async throws {
         let backend = InMemoryFilterBackend()
         let store = makeStore(backend)
-        async let first: Void = store.setEnabled(true)
-        async let second: Void = store.setEnabled(false)
-        async let third: Void = store.setEnabled(true)
-        _ = try await (first, second, third)
+        // Issue the requests in a known order (as hotkey presses arrive on the main
+        // actor) without waiting for each to finish; they must apply in that order.
+        let requests = [true, false, true].map { enabled in
+            Task { @MainActor in try await store.setEnabled(enabled) }
+        }
+        for request in requests { try await request.value }
         XCTAssertTrue(store.isEnabled)
         XCTAssertEqual(store.phase, .on)
         XCTAssertTrue(backend.isActive)

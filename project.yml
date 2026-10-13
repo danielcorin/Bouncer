@@ -9,6 +9,11 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+  fileTypes:
+    icon:
+      # Keep AppIcon.icon a single package resource (XcodeGen issue #1556).
+      buildPhase: resources
+      file: true
   generateEmptyDirectories: true
 
 # Project-level signing config lives in an xcconfig so a real Team ID and
@@ -92,9 +97,10 @@ targets:
       base:
         PRODUCT_NAME: Bouncer
         COMBINE_HIDPI_IMAGES: "YES"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 wvlen LLC"
         INFOPLIST_KEY_LSUIElement: "YES"          # menu bar app: no Dock icon
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
-        INFOPLIST_KEY_NSHumanReadableCopyright: ""
     postBuildScripts:
       - name: Embed Bouncer CLI
         script: |

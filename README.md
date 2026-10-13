@@ -11,6 +11,8 @@ When Bouncer quits — or crashes, or is force-quit — every block is removed.
   directly. Double-click a rule to edit it; right-click for more.
 - **Hotkey**: ⌃⌥⌘B toggles blocking from anywhere (change it in Settings, or
   `bouncer config set hotkey --value "shift+cmd+f12"`).
+- **About**: the ⓘ button in the menu (or Settings › About) shows the version, how
+  blocking works, and the shortcuts.
 - **Indicator**: when a lookup is blocked, the menu bar icon turns into a red hand
   and shows the blocked domain for a couple of seconds.
 - **First use**: the first time you turn blocking on, macOS asks you to allow
@@ -112,6 +114,7 @@ mise install
 scripts/generate-api.sh      # after editing API/openapi.yaml
 scripts/verify.sh            # the full gate: generation, boundaries, tests, scenarios
 scripts/try-dev.sh           # development-signed build (provisions the tunnel) → /Applications
+swift scripts/generate-app-icon.swift  # re-render the icon (AppIcon.icon glyph + legacy PNGs)
 ```
 
 `project.yml` is the Xcode source of truth; set `DEVELOPMENT_TEAM` in the ignored

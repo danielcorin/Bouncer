@@ -6,9 +6,9 @@ import SwiftUI
 final class SettingsWindowController {
     private let window: NSWindow
 
-    init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel) {
+    init(store: BlockingStore, service: BouncerService, configuration: AppConfigurationModel, openAbout: @escaping () -> Void) {
         window = NSWindow(contentViewController: NSHostingController(rootView:
-            SettingsView(store: store, service: service, configuration: configuration)))
+            SettingsView(store: store, service: service, configuration: configuration, openAbout: openAbout)))
         window.title = "Bouncer Settings"
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
@@ -25,6 +25,7 @@ struct SettingsView: View {
     @ObservedObject var store: BlockingStore
     let service: BouncerService
     @ObservedObject var configuration: AppConfigurationModel
+    let openAbout: () -> Void
 
     @State private var upstream = ""
     @State private var testDomain = ""
@@ -103,6 +104,22 @@ struct SettingsView: View {
                         NSWorkspace.shared.activateFileViewerSelecting([configuration.fileURL.deletingLastPathComponent()])
                     }
                     .buttonStyle(.link)
+                }
+            }
+
+            Section("About") {
+                HStack(spacing: 12) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Bouncer").font(.headline)
+                        Text("\(AboutInfo.version) · \(AboutInfo.copyright)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("About Bouncer…", action: openAbout)
                 }
             }
 
